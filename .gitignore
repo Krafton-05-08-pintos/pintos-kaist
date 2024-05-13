@@ -50,3 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# make시, 셍성되는 디렉토리
+threads/build/
+threads/logfile
