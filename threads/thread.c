@@ -314,6 +314,17 @@ thread_yield (void) {
 	intr_set_level (old_level);
 }
 
+void
+thread_sleep (int64_t ticks){					// timer_sleep 에서 start + ticks 를 매개변수로 호출
+	struct thread *cur = thread_current ();
+
+	cur->wakeup_time = ticks;					// 현재 thread정보 구조체에 thicks(일어나야 하는 시간) 저장
+    list_push_back(&sleep_list, &cur->elem); 	// cur.elem -> list와 thread애 동시애 소속 되는 thread/
+												// 이전 스래드와 다음 스레드의 elem 주소를 저장 하고 있음.
+												// 뒤에 삽입해야 순회중 break 할 수 있음.
+
+    thread_block();                             // state를 blocked로 변경, schedule 실행
+}
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
