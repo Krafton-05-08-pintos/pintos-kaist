@@ -54,6 +54,9 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+// init_thread() 를 통해 초기화 할 sleep_list의 포인터
+static struct list *sleep_list;
+
 static void kernel_thread (thread_func *, void *aux);
 
 static void idle (void *aux UNUSED);
@@ -115,6 +118,9 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
+
+	// sleep_list 초기화
+	list_init(sleep_list);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
