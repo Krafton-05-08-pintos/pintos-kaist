@@ -72,7 +72,7 @@ timer_calibrate (void) {
 
 /* Returns the number of timer ticks since the OS booted. */
 int64_t
-timer_ticks (void) {
+ timer_ticks (void) {
 	enum intr_level old_level = intr_disable ();
 	int64_t t = ticks;
 	intr_set_level (old_level);
@@ -90,11 +90,19 @@ timer_elapsed (int64_t then) {
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) {
+	enum intr_level old_level;
+	old_level = intr_disable ();			// 함수 진행도중, context switching이 일어나나지 않게 하기 위해 추가
+
 	int64_t start = timer_ticks ();
 
 	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	// while (timer_elapsed (start) < ticks)
+	// 	thread_yield ();
+	// busy waiting
+	if(timer_elapsed(start) < ticks)
+		  thread_sleep(start + ticks);		// 바쁜 대기 개선
+
+	intr_set_level (old_level);				// 함수 진행 후 interrupt 복구
 }
 
 /* Suspends execution for approximately MS milliseconds. */
