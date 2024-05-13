@@ -29,7 +29,7 @@
 static struct list ready_list;
 
 // init_thread() 를 통해 초기화 할 sleep_list의 포인터
-static struct list *sleep_list;
+static struct list sleep_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -324,6 +324,19 @@ thread_sleep (int64_t ticks){					// timer_sleep 에서 start + ticks 를 매개
 												// 뒤에 삽입해야 순회중 break 할 수 있음.
 
     thread_block();                             // state를 blocked로 변경, schedule 실행
+}
+
+int64_t thread_wakeup(int64_t ticks){
+	struct list_elem* front_ptr = list_pop_front(&sleep_list);
+	struct thread * tmp=list_entry(front_ptr, struct thread, elem);
+	
+	while(tmp->wakeup_time <= ticks){
+		list_push_back(&ready_list, front_ptr);
+		front_ptr = list_pop_front(&sleep_list);
+		tmp = list_entry(front_ptr, struct thread, elem);
+	}
+	list_push_front(&sleep_list, front_ptr);
+	return tmp->wakeup_time;
 }
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
