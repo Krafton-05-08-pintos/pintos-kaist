@@ -133,8 +133,9 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
-void thread_sleep(int64_t ticks);
 
+void thread_sleep(int64_t ticks);
+int64_t thread_wakeup(int64_t ticks);
 void thread_print_list();
 
 int thread_get_priority(void);
@@ -146,5 +147,7 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
+
+bool less_function(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 #endif /* threads/thread.h */

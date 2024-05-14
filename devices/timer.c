@@ -130,9 +130,13 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
-	if(min_tick > ticks){
-		thread_print_list();
-
+	if(min_tick < ticks){
+		// printf("ticks : %lld\n", ticks);
+		// printf("before\n");
+		// thread_print_list();
+		min_tick = thread_wakeup(ticks);
+		// printf("after\n");
+		// thread_print_list();
 	}
 }
 
