@@ -29,7 +29,6 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
-// init_thread() 를 통해 초기화 할 sleep_list의 포인터
 static struct list sleep_list;
 
 /* Idle thread. */
@@ -120,9 +119,6 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
-
-	// sleep_list 초기화
-	list_init(&sleep_list);						//****** 수정 ******//
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
