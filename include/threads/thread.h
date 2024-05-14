@@ -93,6 +93,7 @@ struct thread {
 	int priority;                       /* Priority. */
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
+	struct list_elem sema_elem; /* Sema List element. */
 	int64_t wakeup_time;
 
 #ifdef USERPROG
