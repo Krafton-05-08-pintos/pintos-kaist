@@ -28,6 +28,8 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -108,6 +110,7 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&sleep_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -241,6 +244,7 @@ thread_unblock (struct thread *t) {
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
 	list_push_back (&ready_list, &t->elem);
+	// list_push_back (&sleep_list, &t->elem);
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -316,18 +320,20 @@ thread_sleep (void){
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
-	if (curr != idle_thread)
+	if (curr != idle_thread){
 		list_push_back (&ready_list, &curr->elem);
+		list_push_back (&sleep_list, &curr->elem);
+	}
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 
-	printf("Test : printList\n");
-	struct list_elem *ptr = list_head(&ready_list);
-	while(ptr->next != list_tail(&ready_list))
+	printf("Test : print sleep List\n");
+	struct list_elem *ptr2 = list_head(&sleep_list);
+	while(ptr2->next != list_tail(&sleep_list))
 	{
-		ptr = ptr->next;
-		struct thread* t = list_entry (ptr, struct thread, elem);
-		printf("%lld ", t->tid);
+		ptr2 = ptr2->next;
+		struct thread* t2 = list_entry (ptr2, struct thread, elem);
+		printf("%d ", t2->tid);
 	}
 	printf("\n");
 }
