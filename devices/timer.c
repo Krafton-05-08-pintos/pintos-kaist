@@ -91,12 +91,10 @@ timer_elapsed (int64_t then) {
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) {
-	enum intr_level old_level;
-	old_level = intr_disable ();			// 함수 진행도중, context switching이 일어나나지 않게 하기 위해 추가
+	// 함수 진행도중, context switching이 일어나나지 않게 하기 위해 추가
 
 	int64_t start = timer_ticks ();
 	
-	ASSERT (intr_get_level () == INTR_ON);
 	while (timer_elapsed (start) < ticks){
 		if(min_tick > start+ticks)
 			min_tick = start+ticks;
@@ -133,13 +131,8 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
-	if(min_tick < ticks){
-		// printf("ticks : %lld\n", ticks);
-		// printf("before\n");
-		// thread_print_list();
+	if(min_tick <= ticks){
 		min_tick = thread_wakeup(ticks);
-		// printf("after\n");
-		// thread_print_list();
 	}
 }
 
