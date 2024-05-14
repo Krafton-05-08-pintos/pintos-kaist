@@ -308,6 +308,20 @@ thread_yield (void) {
 	intr_set_level (old_level);
 }
 
+void
+thread_sleep (void){
+	struct thread *curr = thread_current ();
+	enum intr_level old_level;
+
+	ASSERT (!intr_context ());
+
+	old_level = intr_disable ();
+	if (curr != idle_thread)
+		list_push_back (&ready_list, &curr->elem);
+	do_schedule (THREAD_READY);
+	intr_set_level (old_level);
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
