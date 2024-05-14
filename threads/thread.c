@@ -320,6 +320,16 @@ thread_sleep (void){
 		list_push_back (&ready_list, &curr->elem);
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
+
+	printf("Test : printList\n");
+	struct list_elem *ptr = list_head(&ready_list);
+	while(ptr->next != list_tail(&ready_list))
+	{
+		ptr = ptr->next;
+		struct thread* t = list_entry (ptr, struct thread, elem);
+		printf("%lld ", t->tid);
+	}
+	printf("\n");
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
