@@ -323,13 +323,36 @@ thread_sleep (int64_t ticks){
 	old_level = intr_disable ();
 	if (curr != idle_thread){
 		curr->wakeup_time = ticks;
-		list_push_back (&ready_list, &curr->elem);
-		list_push_back (&sleep_list, &curr->elem);
+		list_insert_ordered(&sleep_list, &curr->elem, less_function, NULL);
 	}
-	do_schedule (THREAD_READY);
+	do_schedule (THREAD_BLOCKED);
 	intr_set_level (old_level);
 
-    thread_print_list();
+	/* test 함수 */
+    // thread_print_list();
+}
+
+int64_t thread_wakeup(int64_t ticks){
+    // printf("<<<<<start wakeup function>>>>>>\n");
+	// struct list_elem *ptr = list_head(&sleep_list);
+	int64_t next_tick = 0;
+
+    while (!list_empty(&sleep_list))
+    {
+        struct list_elem *ptr = list_begin(&sleep_list);
+        struct thread *t = list_entry(ptr, struct thread, elem);
+		next_tick = t->wakeup_time;
+
+		if(next_tick > ticks)
+			break;
+		list_pop_front (&sleep_list);
+		// list_push_back (&ready_list, &t->elem);
+		thread_unblock(t);
+    }
+	
+	if(list_empty(&sleep_list))
+		return INT64_MAX;
+	return next_tick;
 }
 
 void thread_print_list()
@@ -340,10 +363,11 @@ void thread_print_list()
     {
         ptr2 = ptr2->next;
         struct thread *t2 = list_entry(ptr2, struct thread, elem);
-        printf("%d ", t2->tid);
+        printf("%lld ", t2->wakeup_time);
     }
     printf("\n");
-} /* Sets the current thread's priority to NEW_PRIORITY. */
+} 
+/* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
@@ -622,4 +646,15 @@ allocate_tid (void) {
 	lock_release (&tid_lock);
 
 	return tid;
+}
+
+// bool less_function(const struct list_elem *a, const struct list_elem *b, void *aux) {
+//     return *(int64_t *)list_entry(a, struct thread, elem)->wakeup_time 
+// 						< *(int64_t *)list_entry(b, struct thread, elem)->wakeup_time;
+// }
+bool less_function(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    const struct thread *thread_a = list_entry(a, struct thread, elem);
+    const struct thread *thread_b = list_entry(b, struct thread, elem);
+    
+    return thread_a->wakeup_time < thread_b->wakeup_time;
 }
