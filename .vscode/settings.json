@@ -1,6 +1,12 @@
 {
     "files.associations": {
         "*.c": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "intr-stubs.h": "c",
+        "thread.h": "c",
+        "stdio.h": "c",
+        "string.h": "c",
+        "random.h": "c",
+        "flags.h": "c"
     }
 }

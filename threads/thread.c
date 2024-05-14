@@ -13,6 +13,7 @@
 #include "intrinsic.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "thread.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -313,7 +314,7 @@ thread_yield (void) {
 }
 
 void
-thread_sleep (void){
+thread_sleep (int64_t ticks){
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
 
@@ -321,24 +322,28 @@ thread_sleep (void){
 
 	old_level = intr_disable ();
 	if (curr != idle_thread){
+		curr->wakeup_time = ticks;
 		list_push_back (&ready_list, &curr->elem);
 		list_push_back (&sleep_list, &curr->elem);
 	}
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 
-	printf("Test : print sleep List\n");
-	struct list_elem *ptr2 = list_head(&sleep_list);
-	while(ptr2->next != list_tail(&sleep_list))
-	{
-		ptr2 = ptr2->next;
-		struct thread* t2 = list_entry (ptr2, struct thread, elem);
-		printf("%d ", t2->tid);
-	}
-	printf("\n");
+    thread_print_list();
 }
 
-/* Sets the current thread's priority to NEW_PRIORITY. */
+void thread_print_list()
+{
+    printf("Test : print sleep List\n");
+    struct list_elem *ptr2 = list_head(&sleep_list);
+    while (ptr2->next != list_tail(&sleep_list))
+    {
+        ptr2 = ptr2->next;
+        struct thread *t2 = list_entry(ptr2, struct thread, elem);
+        printf("%d ", t2->tid);
+    }
+    printf("\n");
+} /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
