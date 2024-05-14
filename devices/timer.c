@@ -73,7 +73,7 @@ timer_calibrate (void) {
 
 /* Returns the number of timer ticks since the OS booted. */
 int64_t
- timer_ticks (void) {
+timer_ticks (void) {
 	enum intr_level old_level = intr_disable ();
 	int64_t t = ticks;
 	intr_set_level (old_level);
@@ -91,8 +91,6 @@ timer_elapsed (int64_t then) {
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) {
-	// 함수 진행도중, context switching이 일어나나지 않게 하기 위해 추가
-
 	int64_t start = timer_ticks ();
 	
 	while (timer_elapsed (start) < ticks){
@@ -125,7 +123,7 @@ void
 timer_print_stats (void) {
 	printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
