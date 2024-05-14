@@ -210,6 +210,8 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
+	if(t->priority > thread_current()->priority)
+		thread_yield();
 
 	return tid;
 }
@@ -244,8 +246,9 @@ thread_unblock (struct thread *t) {
 
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
-	list_push_back (&ready_list, &t->elem);
-	// list_push_back (&sleep_list, &t->elem);
+	
+	list_insert_ordered(&ready_list,&t->elem,high_priority,NULL);
+	
 	t->status = THREAD_READY;
 	intr_set_level (old_level);
 }
@@ -308,33 +311,37 @@ thread_yield (void) {
 
 	old_level = intr_disable ();
 	if (curr != idle_thread)
-		list_push_back (&ready_list, &curr->elem);
+		list_insert_ordered(&ready_list, &curr->elem,high_priority,NULL);
 	do_schedule (THREAD_READY);
 	intr_set_level (old_level);
 }
 
 void
-thread_sleep (int64_t ticks){
+thread_sleep (int64_t ticks) {
+
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
 
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
+
 	if (curr != idle_thread){
 		curr->wakeup_time = ticks;
 		list_insert_ordered(&sleep_list, &curr->elem, less_function, NULL);
 	}
-	do_schedule (THREAD_BLOCKED);
+	
+	//do_schedule (THREAD_BLOCKED);
+	thread_block();
+
 	intr_set_level (old_level);
 
 	/* test 함수 */
     // thread_print_list();
 }
 
-int64_t thread_wakeup(int64_t ticks){
-    // printf("<<<<<start wakeup function>>>>>>\n");
-	// struct list_elem *ptr = list_head(&sleep_list);
+int64_t thread_wakeup(int64_t ticks) {
+    
 	int64_t next_tick = 0;
 
     while (!list_empty(&sleep_list))
@@ -346,6 +353,7 @@ int64_t thread_wakeup(int64_t ticks){
 		if(next_tick > ticks)
 			break;
 		list_pop_front (&sleep_list);
+
 		// list_push_back (&ready_list, &t->elem);
 		thread_unblock(t);
     }
@@ -363,7 +371,7 @@ void thread_print_list()
     {
         ptr2 = ptr2->next;
         struct thread *t2 = list_entry(ptr2, struct thread, elem);
-        printf("%lld ", t2->wakeup_time);
+        printf("%lld ", t2->priority);
     }
     printf("\n");
 } 
@@ -652,9 +660,19 @@ allocate_tid (void) {
 //     return *(int64_t *)list_entry(a, struct thread, elem)->wakeup_time 
 // 						< *(int64_t *)list_entry(b, struct thread, elem)->wakeup_time;
 // }
+
+
 bool less_function(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
     const struct thread *thread_a = list_entry(a, struct thread, elem);
     const struct thread *thread_b = list_entry(b, struct thread, elem);
     
     return thread_a->wakeup_time < thread_b->wakeup_time;
+}
+
+
+bool high_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    const struct thread *thread_a = list_entry(a, struct thread, elem);
+    const struct thread *thread_b = list_entry(b, struct thread, elem);
+    
+    return thread_a->priority > thread_b->priority;
 }
