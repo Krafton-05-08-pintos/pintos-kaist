@@ -236,11 +236,6 @@ lock_held_by_current_thread (const struct lock *lock) {
 	return lock->holder == thread_current ();
 }
 
-/* One semaphore in a list. */
-struct semaphore_elem {
-	struct list_elem elem;              /* List element. */
-	struct semaphore semaphore;         /* This semaphore. */
-};
 
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
@@ -282,7 +277,7 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	sema_init (&waiter.semaphore, 0);
-	list_insert_ordered(&cond->waiters, &waiter.elem, high_priority,NULL);
+	list_insert_ordered(&cond->waiters, &waiter.elem, high_priority_sema, NULL);
 	thread_print_list(&(cond->waiters));
 	// list_push_back (&cond->waiters, &waiter.elem);
 	lock_release (lock);
@@ -297,6 +292,7 @@ cond_wait (struct condition *cond, struct lock *lock) {
    An interrupt handler cannot acquire a lock, so it does not
    make sense to try to signal a condition variable within an
    interrupt handler. */
+
 void
 cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	ASSERT (cond != NULL);
@@ -322,4 +318,9 @@ cond_broadcast (struct condition *cond, struct lock *lock) {
 
 	while (!list_empty (&cond->waiters))
 		cond_signal (cond, lock);
+}
+
+struct semaphore_elem *get_semaphore_elem(struct list_elem *list_ptr) {
+
+	return list_entry(list_ptr, struct semaphore_elem, elem);
 }

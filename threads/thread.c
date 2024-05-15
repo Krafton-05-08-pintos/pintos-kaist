@@ -375,6 +375,8 @@ void thread_print_list(struct list *list)
     }
     printf("\n");
 } 
+
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
@@ -676,3 +678,19 @@ bool high_priority(const struct list_elem *a, const struct list_elem *b, void *a
     
     return thread_a->priority > thread_b->priority;
 }
+
+bool high_priority_sema(struct list_elem *a, struct list_elem *b, void *aux UNUSED) {
+    struct semaphore_elem *sema_elem_a = (struct semaphore_elem *)get_semaphore_elem(a);
+    struct semaphore_elem *sema_elem_b = (struct semaphore_elem *)get_semaphore_elem(b);
+
+	if (!list_empty(&(sema_elem_a->semaphore.waiters)) && !list_empty(&(sema_elem_b->semaphore.waiters))) {
+        struct thread *thread_a = list_entry(list_front(&(sema_elem_a->semaphore.waiters)), struct thread, elem);
+        struct thread *thread_b = list_entry(list_front(&(sema_elem_b->semaphore.waiters)), struct thread, elem);
+        return thread_a->priority > thread_b->priority;
+    } else if (list_empty(&(sema_elem_a->semaphore.waiters))) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
