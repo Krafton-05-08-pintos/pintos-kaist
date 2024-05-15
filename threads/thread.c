@@ -185,7 +185,7 @@ thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
 	struct thread *t;
 	tid_t tid;
-
+	printf("create thread :: priority - %d\n", priority);
 	ASSERT (function != NULL);
 
 	/* Allocate thread. */
@@ -363,15 +363,15 @@ int64_t thread_wakeup(int64_t ticks) {
 	return next_tick;
 }
 
-void thread_print_list()
+void thread_print_list(struct list *list)
 {
     printf("Test : print sleep List\n");
-    struct list_elem *ptr2 = list_head(&sleep_list);
-    while (ptr2->next != list_tail(&sleep_list))
+    struct list_elem *ptr2 = list_head(list);
+    while (ptr2->next != list_tail(list))
     {
         ptr2 = ptr2->next;
         struct thread *t2 = list_entry(ptr2, struct thread, elem);
-        printf("%lld ", t2->priority);
+        printf("%d ", t2->priority);
     }
     printf("\n");
 } 
