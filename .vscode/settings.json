@@ -7,6 +7,7 @@
         "stdio.h": "c",
         "string.h": "c",
         "random.h": "c",
-        "flags.h": "c"
+        "flags.h": "c",
+        "timer.h": "c"
     }
 }
