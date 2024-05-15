@@ -363,9 +363,23 @@ int64_t thread_wakeup(int64_t ticks) {
 	return next_tick;
 }
 
+void thread_print_list_bysema(struct list *list)
+{
+	printf("Test : print sleep List\n");
+    struct list_elem *sema_elem = list_head(list);
+
+    while (sema_elem->next != list_tail(list))
+    {
+        sema_elem = sema_elem->next;
+		struct semaphore_elem *semaelem = get_semaphore_elem(sema_elem);
+		struct list *tmp = &semaelem->semaphore.waiters;
+        thread_print_list(tmp);
+    }
+} 
+
 void thread_print_list(struct list *list)
 {
-    printf("Test : print sleep List\n");
+    // printf("Test : print sleep List\n");
     struct list_elem *ptr2 = list_head(list);
     while (ptr2->next != list_tail(list))
     {
