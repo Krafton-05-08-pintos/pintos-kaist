@@ -93,7 +93,12 @@ struct thread {
 	int priority;                       /* Priority. */
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
-	int64_t wakeup_time;
+	int64_t wakeup_time;				/* alarm clock에 의해 깨어날 시간 */
+	
+	/* Donation을 위한 변수 TODO: init에 추가 필요 */
+	struct lock *wait_on_lock;
+	// struct list_elem delem;
+	// struct list donations;
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */

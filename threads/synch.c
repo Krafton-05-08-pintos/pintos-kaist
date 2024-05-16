@@ -59,6 +59,10 @@ sema_init (struct semaphore *sema, unsigned value) {
    sema_down function. */
 void
 sema_down (struct semaphore *sema) {
+	// /* 대기자 리스트에 삽입하려는 스레드의 우선순위를 holder와 비교 () */
+	int insert_priority = thread_current()->priority;
+	if (thread_current()->wait_on_lock->holder->priority < insert_priority)
+		thread_current()->wait_on_lock->holder->priority = insert_priority;
 	enum intr_level old_level;
 
 	ASSERT (sema != NULL);
@@ -195,7 +199,15 @@ lock_acquire (struct lock *lock) {
 		if(lock->holder->priority < thread_current() -> priority){
 			lock->holder->priority = thread_current() -> priority;
 		}
+		thread_current()->wait_on_lock = lock;
 	}
+
+	thread_current()->wait_on_lock = lock;
+
+	// printf(" sema_down 발생\n");
+	// printf("------------------- \n");
+	// printf("삽입하려는 thread priority : %d\n", thread_current()->priority);
+	// printf("holder의 thread priority : %d\n", thread_current()->wait_on_lock->holder->priority);
 	sema_down (&lock->semaphore);
 	lock->holder = thread_current ();
 }
