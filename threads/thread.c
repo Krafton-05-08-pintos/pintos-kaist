@@ -411,6 +411,7 @@ void thread_print_readylist()
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+	thread_current ()->original_priority = new_priority;
 
 	struct thread * ready_front = list_entry(list_begin(&ready_list),struct thread,elem);
 	if(thread_current ()->priority < ready_front->priority)
@@ -512,6 +513,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	t->original_priority = priority;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
