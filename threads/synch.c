@@ -118,7 +118,7 @@ sema_up (struct semaphore *sema) {
 	}
 	sema->value++;
 	intr_set_level (old_level);
-	if(t->priority> thread_current()->priority)
+	if(t->priority > thread_current()->priority)
 		thread_yield();
 }
 
@@ -195,19 +195,20 @@ lock_acquire (struct lock *lock) {
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
 
+
 	struct thread *holder_thread = lock->holder;
 
 	if(holder_thread != NULL){
         thread_current()->wait_on_lock = lock;
-		iter_set_prioity();
-		list_push_front(&(holder_thread->donations), &(thread_current()->delem));
+		    iter_set_prioity();
+		    list_push_front(&(holder_thread->donations), &(thread_current()->delem));
     }
 	
     sema_down (&lock->semaphore);
 
-	lock->holder = thread_current ();
+	  lock->holder = thread_current ();
 
-	thread_current()->wait_on_lock = NULL;
+	  thread_current()->wait_on_lock = NULL;
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -264,7 +265,6 @@ lock_held_by_current_thread (const struct lock *lock) {
 	return lock->holder == thread_current ();
 }
 
-
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
    code to receive the signal and act upon it. */
