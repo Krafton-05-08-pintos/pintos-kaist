@@ -116,7 +116,7 @@ sema_up (struct semaphore *sema) {
 	}
 	sema->value++;
 	intr_set_level (old_level);
-	if(t->priority> thread_current()->priority)
+	if(t->priority > thread_current()->priority)
 		thread_yield();
 }
 
@@ -197,11 +197,11 @@ lock_acquire (struct lock *lock) {
 		if(lock->holder->priority < tmp){
 			lock->holder->priority = tmp;
 		}
-		// thread_current()->wait_on_lock = lock;
 	}
-	
+	thread_current()->wait_on_lock = lock;
     sema_down (&lock->semaphore);
 	lock->holder = thread_current ();
+	thread_current()->wait_on_lock = NULL;
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -236,6 +236,10 @@ lock_release (struct lock *lock) {
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
+
+	if(thread_current()->priority != thread_current()->original_priority){
+		thread_set_priority(thread_current()->original_priority);
+	}
 }
 
 /* Returns true if the current thread holds LOCK, false

@@ -97,6 +97,7 @@ struct thread {
 	
 	/* Donation을 위한 변수 TODO: init에 추가 필요 */
 	struct lock *wait_on_lock;
+	int original_priority;
 	// struct list_elem delem;
 	// struct list donations;
 
