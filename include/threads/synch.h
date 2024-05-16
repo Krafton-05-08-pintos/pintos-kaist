@@ -48,6 +48,8 @@ void cond_broadcast (struct condition *, struct lock *);
 
 struct semaphore_elem *get_semaphore_elem(struct list_elem *list_ptr);
 
+void iter_set_prioity();
+
 /* Optimization barrier.
  *
  * The compiler will not reorder operations across an

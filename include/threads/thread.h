@@ -96,9 +96,10 @@ struct thread {
 	int64_t wakeup_time;				/* alarm clock에 의해 깨어날 시간 */
 	
 	/* Donation을 위한 변수 TODO: init에 추가 필요 */
+	int original_priority;
 	struct lock *wait_on_lock;
-	// struct list_elem delem;
-	// struct list donations;
+	struct list_elem delem;
+	struct list donations;
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */

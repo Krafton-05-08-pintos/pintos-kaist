@@ -114,11 +114,14 @@ thread_init (void) {
 	list_init (&sleep_list);
 	list_init (&destruction_req);
 
+	
+
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread ();
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -410,7 +413,9 @@ void thread_print_readylist()
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
+
 	thread_current ()->priority = new_priority;
+	thread_current ()->original_priority = new_priority;
 
 	struct thread * ready_front = list_entry(list_begin(&ready_list),struct thread,elem);
 	if(thread_current ()->priority < ready_front->priority)
@@ -512,6 +517,9 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	list_init(&(t->donations));
+
+	t->original_priority = priority;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
