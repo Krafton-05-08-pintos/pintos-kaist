@@ -79,4 +79,5 @@ h_thread_func (void *ls_)
   sema_up (&ls->sema);
   lock_release (&ls->lock);
   msg ("Thread H finished.");
+  
 }
