@@ -411,6 +411,10 @@ void thread_print_readylist()
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+
+	struct thread * ready_front = list_entry(list_begin(&ready_list),struct thread,elem);
+	if(thread_current ()->priority < ready_front->priority)
+		thread_yield();
 }
 
 /* Returns the current thread's priority. */
