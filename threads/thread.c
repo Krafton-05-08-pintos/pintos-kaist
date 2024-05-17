@@ -413,15 +413,23 @@ void thread_print_readylist()
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
+	if(list_empty(&(thread_current()->donations))){
+		thread_current ()->priority = new_priority;
+		thread_current ()->original_priority = new_priority;
+		context_switch();
+	}
+	else{
+		if(thread_current()->priority < new_priority)
+			thread_current()->priority = new_priority;
+		thread_current()->original_priority = new_priority;
+	}
+}
 
-	thread_current ()->priority = new_priority;
-	thread_current ()->original_priority = new_priority;
-
+void context_switch(void){
 	struct thread * ready_front = list_entry(list_begin(&ready_list),struct thread,elem);
 	if(thread_current ()->priority < ready_front->priority)
 		thread_yield();
 }
-
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) {

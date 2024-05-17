@@ -278,6 +278,7 @@ void lock_release(struct lock *lock)
 	if (!list_empty(&(cur_thread->donations)))
 	{
 		cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)), struct thread, delem)->priority;
+		context_switch();
 	}
 	else
 	{
