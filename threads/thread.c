@@ -416,12 +416,14 @@ thread_set_priority (int new_priority) {
 
 	thread_current ()->priority = new_priority;
 	thread_current ()->original_priority = new_priority;
+	context_switch();
+}
 
+void context_switch(void){
 	struct thread * ready_front = list_entry(list_begin(&ready_list),struct thread,elem);
 	if(thread_current ()->priority < ready_front->priority)
 		thread_yield();
 }
-
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) {
