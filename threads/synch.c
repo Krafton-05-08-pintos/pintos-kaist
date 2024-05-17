@@ -238,41 +238,49 @@ lock_try_acquire (struct lock *lock) {
    make sense to try to release a lock within an interrupt
    handler. */
 
-void
-lock_release (struct lock *lock) {
-   ASSERT (lock != NULL);
-   ASSERT (lock_held_by_current_thread (lock));
+void lock_release(struct lock *lock)
+{
+	ASSERT(lock != NULL);
+	ASSERT(lock_held_by_current_thread(lock));
 
-   struct thread *next_holder = NULL;
-    struct thread *cur_thread = thread_current();
-    struct list_elem *ptr = list_begin(&(cur_thread->donations));
-    
-   lock->holder = NULL;
-   sema_up (&lock->semaphore);
+	struct thread *next_holder = NULL;
+	struct thread *cur_thread = thread_current();
+	struct list_elem *ptr = list_begin(&(cur_thread->donations));
 
-   if(cur_thread->original_priority != cur_thread->priority)
-   {
-      while (ptr != list_tail(&(cur_thread->donations)))
-      {
-         struct thread *t = list_entry(ptr, struct thread, delem);
-         if(t->wait_on_lock == lock){
-            if(next_holder == NULL){
-               next_holder = t;
-               list_remove(ptr);
-            }
-            else{
-               list_insert_ordered(&next_holder->donations, ptr, high_priority_donation, NULL);
-               list_remove(ptr);
-            }
-         }
-         ptr = ptr->next;
-      }
-      if(!list_empty(&(cur_thread->donations)))
-         cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)),struct thread, delem)->priority;
-      else
-         thread_set_priority(cur_thread->original_priority);
-   }
+	lock->holder = NULL;
+	sema_up(&lock->semaphore);
 
+	while (ptr != list_tail(&(cur_thread->donations)))
+	{
+		struct thread *t = list_entry(ptr, struct thread, delem);
+		if (t->wait_on_lock == lock)
+		{
+			if (next_holder == NULL)
+			{
+				next_holder = t;
+				list_remove(ptr);
+				ptr = ptr->next;
+			}
+			else
+			{
+				list_remove(ptr);
+				struct list_elem *tmp = ptr;
+				ptr = ptr->next;
+				list_insert_ordered(&next_holder->donations, tmp, high_priority_donation, NULL);
+			}
+		}
+		else
+			ptr = ptr->next;
+	}
+	if (!list_empty(&(cur_thread->donations)))
+	{
+		cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)), struct thread, delem)->priority;
+		context_switch();
+	}
+	else
+	{
+		thread_set_priority(cur_thread->original_priority);
+	}
 }
 
 /* Returns true if the current thread holds LOCK, false
