@@ -411,7 +411,6 @@ void thread_print_readylist()
 } 
 
 
-
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority(int new_priority) {
@@ -519,7 +518,6 @@ kernel_thread (thread_func *function, void *aux) {
 	thread_exit ();       /* If function() returns, kill the thread. */
 }
 
-
 /* Does basic initialization of T as a blocked thread named
    NAME. */
 static void
@@ -536,7 +534,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->magic = THREAD_MAGIC;
 	list_init(&(t->donations));
 	t->original_priority = priority;
-	
+
 	t->nice = 0;
 	t->recent_cpu = 0;
 }
