@@ -7,6 +7,8 @@
 #include "threads/io.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/fixedpoint.h"
+
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -129,6 +131,35 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
+	thread_current()->recent_cpu++;
+	if(ticks % 4 == 0){
+		
+		struct list_elem *ptr = list_head(&thread_assemble);
+		while (ptr->next != list_tail(&thread_assemble))
+		{
+			ptr = ptr->next;
+			struct thread *t = list_entry(ptr, struct thread, assemble_elem);
+			t->priority = PRI_MAX - FIXED_POINT_TO_INT_NEAREST(X_DIVIDE_N(t->recent_cpu , 4)) - (t->nice * 2);
+		}
+	}
+
+
+	if(ticks % 100 == 0){
+
+		struct list_elem *ptr = list_head(&thread_assemble);
+		/* load_avg변경 */
+		load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + 
+					X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list));
+
+		/* 전체 순회하면서 recent_cpu 갱신 */
+		while (ptr->next != list_tail(&thread_assemble))
+		{
+			ptr = ptr->next;
+			struct thread *t = list_entry(ptr, struct thread, assemble_elem);
+			t->recent_cpu =  X_ADD_N(X_MULTIPLY_Y(DECAY, t->recent_cpu), (2 * t->nice));
+		}
+	}
+
 	if(min_tick <= ticks){
 		min_tick = thread_wakeup(ticks);
 	}

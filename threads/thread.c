@@ -27,9 +27,9 @@
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
-static struct list ready_list;
-
+struct list ready_list;
 static struct list sleep_list;
+struct list thread_assemble;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -114,7 +114,7 @@ thread_init (void) {
 	list_init (&ready_list);
 	list_init (&sleep_list);
 	list_init (&destruction_req);
-
+	list_init (&thread_assemble);
 	
 
 	/* Set up a thread structure for the running thread. */
@@ -212,6 +212,9 @@ thread_create (const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
+	/* 전체 리스트에 삽입 */
+	list_push_back(&thread_assemble, &(t->assemble_elem));
+
 	/* Add to run queue. */
 	thread_unblock (t);
 	if(t->priority > thread_current()->priority)
@@ -296,7 +299,7 @@ thread_exit (void) {
 #ifdef USERPROG
 	process_exit ();
 #endif
-
+	list_remove(&(thread_current()->assemble_elem));
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
 	intr_disable ();

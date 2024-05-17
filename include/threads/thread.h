@@ -24,6 +24,9 @@ enum thread_status {
 typedef int tid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
 
+/* decay */
+#define DECAY ((2*thread_get_load_avg()) / ((2*thread_get_load_avg())+1))
+
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
@@ -102,6 +105,7 @@ struct thread {
 	struct lock *wait_on_lock;
 	struct list_elem delem;
 	struct list donations;
+	struct list_elem assemble_elem;
 
 	int nice;
 	int recent_cpu;
@@ -125,6 +129,9 @@ struct thread {
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+extern struct list thread_assemble;
+extern struct list ready_list;
+extern int load_avg;
 
 void thread_init (void);
 void thread_start (void);
