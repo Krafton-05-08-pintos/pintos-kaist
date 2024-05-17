@@ -70,11 +70,12 @@ static tid_t allocate_tid (void);
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
 
 /* Returns the running thread.
- * Read the CPU's stack pointer `rsp', and then round that
- * down to the start of a page.  Since `struct thread' is
+ * Read the CPU's stack epointer `rsp', and then round that
+ * down to the start of a pag.  Since `struct thread' is
  * always at the beginning of a page and the stack pointer is
  * somewhere in the middle, this locates the curent thread. */
 #define running_thread() ((struct thread *) (pg_round_down (rrsp ())))
+int load_avg;
 
 
 // Global descriptor table for the thread_start.
@@ -413,17 +414,23 @@ void thread_print_readylist()
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
-thread_set_priority (int new_priority) {
-	if(list_empty(&(thread_current()->donations))){
+thread_set_priority(int new_priority) {
+
+	if(!thread_mlfqs)
+	{
+		if(list_empty(&(thread_current()->donations))){
 		thread_current ()->priority = new_priority;
 		thread_current ()->original_priority = new_priority;
 		context_switch();
+		}
+		else{
+			if(thread_current()->priority < new_priority)
+				thread_current()->priority = new_priority;
+			thread_current()->original_priority = new_priority;
+		}
 	}
-	else{
-		if(thread_current()->priority < new_priority)
-			thread_current()->priority = new_priority;
-		thread_current()->original_priority = new_priority;
-	}
+	else thread_current ()->priority = new_priority;
+	
 }
 
 void context_switch(void){
@@ -439,29 +446,30 @@ thread_get_priority (void) {
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) {
+thread_set_nice (int nice) {
 	/* TODO: Your implementation goes here */
+	thread_current()->nice = nice;
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	return load_avg;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	return thread_current()->recent_cpu;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -528,6 +536,9 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->magic = THREAD_MAGIC;
 	list_init(&(t->donations));
 	t->original_priority = priority;
+	
+	t->nice = 0;
+	t->recent_cpu = 0;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
