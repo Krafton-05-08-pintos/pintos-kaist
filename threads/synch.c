@@ -199,7 +199,7 @@ lock_acquire (struct lock *lock) {
 
 	if(holder_thread != NULL){
         thread_current()->wait_on_lock = lock;
-		iter_set_prioity();
+		iter_set_prioity(); // priority-donate-nest
 		list_push_front(&(holder_thread->donations), &(thread_current()->delem));
     }
 	
@@ -241,14 +241,14 @@ lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
 
-	struct thread *release_thread = thread_current();
+	// struct thread *release_thread = thread_current();
 
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
 
-	if(release_thread->original_priority != release_thread->priority)
+	if(thread_current()->original_priority != thread_current()->priority)
 	{
-		thread_set_priority(release_thread->original_priority);
+		thread_set_priority(thread_current()->original_priority);
 		//struct list_elem* pop_donation = list_pop_front(&(release_thread->donations));
 	}
 }
@@ -262,7 +262,7 @@ lock_held_by_current_thread (const struct lock *lock) {
 
 	return lock->holder == thread_current ();
 }
-
+
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
    code to receive the signal and act upon it. */
