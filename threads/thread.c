@@ -735,3 +735,10 @@ bool high_priority_sema(struct list_elem *a, struct list_elem *b, void *aux UNUS
     }
 }
 
+bool high_priority_donation(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    const struct thread *thread_a = list_entry(a, struct thread, delem);
+    const struct thread *thread_b = list_entry(b, struct thread, delem);
+    
+    return thread_a->priority > thread_b->priority;
+}
+
