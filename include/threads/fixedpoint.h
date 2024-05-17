@@ -1,6 +1,8 @@
 #ifndef THREADS_FIXEDPOINT_H
 #define THREADS_FIXEDPOINT_H
 
+int load_avg;
+
 #define F (1<<14)
 #define INT_TO_FIXED_POINT(n) ((n)*(F))
 #define FIXED_POINT_TO_INT(x) ((x)/(F))
