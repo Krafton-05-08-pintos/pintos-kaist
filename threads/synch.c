@@ -285,6 +285,7 @@ void lock_release(struct lock *lock)
 	{
 		thread_set_priority(cur_thread->original_priority);
 	}
+
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -297,6 +298,7 @@ bool lock_held_by_current_thread(const struct lock *lock)
 
 	return lock->holder == thread_current();
 }
+
 
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
