@@ -56,6 +56,7 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+int load_avg;
 
 static void kernel_thread(thread_func *, void *aux);
 
@@ -757,7 +758,6 @@ void mlfq_priority_update()
 	}
 	
 	list_sort(&ready_list,high_priority, NULL);
-	//context_switch();
 }
 
 void mlfq_recent_cpu_update()
@@ -766,15 +766,14 @@ void mlfq_recent_cpu_update()
 
 	struct list_elem *ptr = list_head(&thread_assemble);
 	/* load_avg변경 */
-	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) +
-			   X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list));
+	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list));
 
 	/* 전체 순회하면서 recent_cpu 갱신 */
 	while (ptr->next != list_tail(&thread_assemble))
 	{
 		ptr = ptr->next;
 		struct thread *t = list_entry(ptr, struct thread, assemble_elem);
-		t->recent_cpu = X_ADD_N(X_MULTIPLY_Y(DECAY, t->recent_cpu), (2 * t->nice));
+		t->recent_cpu = X_ADD_N(X_MULTIPLY_Y(DECAY, t->recent_cpu), (t->nice));
 	}
 
 }
