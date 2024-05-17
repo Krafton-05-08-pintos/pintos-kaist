@@ -172,6 +172,7 @@ sema_test_helper (void *sema_) {
    acquire and release it.  When these restrictions prove
    onerous, it's a good sign that a semaphore should be used,
    instead of a lock. */
+
 void
 lock_init (struct lock *lock) {
 	ASSERT (lock != NULL);
@@ -200,7 +201,8 @@ lock_acquire (struct lock *lock) {
 	if(holder_thread != NULL){
         thread_current()->wait_on_lock = lock;
 		iter_set_prioity();
-		list_push_front(&(holder_thread->donations), &(thread_current()->delem));
+		list_insert_ordered(&(holder_thread->donations), &(thread_current()->delem), high_priority_donation ,NULL);
+		//thread_print_list(&(holder_thread->donations));
     }
 	
     sema_down (&lock->semaphore);
@@ -242,32 +244,53 @@ lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
 
-	struct thread *release_thread = thread_current();
-
+	struct thread *next_holder = NULL;
+    struct thread *cur_thread = thread_current();
+    struct list_elem *ptr = list_begin(&(cur_thread->donations));
+    
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
 
-	if(release_thread->original_priority != release_thread->priority)
+	if(cur_thread->original_priority != cur_thread->priority)
 	{
-		thread_set_priority(release_thread->original_priority);
-		//struct list_elem* pop_donation = list_pop_front(&(release_thread->donations));
+		while (ptr != list_tail(&(cur_thread->donations)))
+		{
+			struct thread *t = list_entry(ptr, struct thread, delem);
+			if(t->wait_on_lock == lock){
+				if(next_holder == NULL){
+					next_holder = t;
+					list_remove(ptr);
+				}
+				else{
+					list_insert_ordered(&next_holder->donations, ptr, high_priority_donation, NULL);
+					list_remove(ptr);
+				}
+			}
+			ptr = ptr->next;
+		}
+		if(!list_empty(&(cur_thread->donations)))
+			cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)),struct thread, delem)->priority;
+		else
+			thread_set_priority(cur_thread->original_priority);
 	}
+
 }
 
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds
    a lock would be racy.) */
+
 bool
 lock_held_by_current_thread (const struct lock *lock) {
 	ASSERT (lock != NULL);
 
 	return lock->holder == thread_current ();
 }
-
 
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
    code to receive the signal and act upon it. */
+
 void
 cond_init (struct condition *cond) {
 	ASSERT (cond != NULL);
@@ -373,7 +396,6 @@ struct semaphore_elem *get_semaphore_elem(struct list_elem *list_ptr) {
 
 //반복적으로 prioirity를 바꿔줌
 void iter_set_prioity() {
-
 	struct thread *th = thread_current();
 	while(th->wait_on_lock != NULL) {
 		if(th->wait_on_lock->holder->priority < th->priority)

@@ -386,10 +386,11 @@ void thread_print_list(struct list *list)
 {
     // printf("Test : print sleep List\n");
     struct list_elem *ptr2 = list_head(list);
+	//printf(" print donation list!!!\n");
     while (ptr2->next != list_tail(list))
     {
         ptr2 = ptr2->next;
-        struct thread *t2 = list_entry(ptr2, struct thread, elem);
+        struct thread *t2 = list_entry(ptr2, struct thread, delem);
         printf("%d ", t2->priority);
     }
     printf("\n");
@@ -734,5 +735,12 @@ bool high_priority_sema(struct list_elem *a, struct list_elem *b, void *aux UNUS
     } else {
         return true;
     }
+}
+
+bool high_priority_donation(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+    const struct thread *thread_a = list_entry(a, struct thread, delem);
+    const struct thread *thread_b = list_entry(b, struct thread, delem);
+    
+    return thread_a->priority > thread_b->priority;
 }
 
