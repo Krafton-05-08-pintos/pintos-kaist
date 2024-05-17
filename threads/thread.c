@@ -386,10 +386,11 @@ void thread_print_list(struct list *list)
 {
     // printf("Test : print sleep List\n");
     struct list_elem *ptr2 = list_head(list);
+	//printf(" print donation list!!!\n");
     while (ptr2->next != list_tail(list))
     {
         ptr2 = ptr2->next;
-        struct thread *t2 = list_entry(ptr2, struct thread, elem);
+        struct thread *t2 = list_entry(ptr2, struct thread, delem);
         printf("%d ", t2->priority);
     }
     printf("\n");
