@@ -106,6 +106,7 @@
 /* Sensitive to assumption that recent_cpu updates happen exactly
    when timer_ticks() % TIMER_FREQ == 0. */
 
+
 void
 test_mlfqs_recent_1 (void) 
 {
@@ -138,7 +139,7 @@ test_mlfqs_recent_1 (void)
                load_avg / 100, load_avg % 100);
           if (elapsed_seconds >= 180)
             break;
-        } 
+        }
       last_elapsed = elapsed;
     }
 }
