@@ -133,11 +133,11 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	
 	thread_current()->recent_cpu++;
 
-	if(ticks % 4 == 0){
+	if(timer_ticks() % 4 == 0){
 		mlfq_priority_update();
 	}
 
-	if(ticks % 100 == 0){
+	if(timer_ticks() % 100 == 0){
 		mlfq_recent_cpu_update();
 	}
 
