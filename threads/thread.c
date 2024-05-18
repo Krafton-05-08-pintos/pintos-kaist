@@ -56,7 +56,7 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
-int load_avg;
+int load_avg = 0;
 
 static void kernel_thread(thread_func *, void *aux);
 
@@ -129,7 +129,6 @@ void thread_start(void)
 	struct semaphore idle_started;
 	sema_init(&idle_started, 0);
 	thread_create("idle", PRI_MIN, idle, &idle_started);
-	load_avg = 0;
 	/* Start preemptive thread scheduling. */
 	intr_enable();
 
@@ -472,14 +471,14 @@ int thread_get_nice(void)
 int thread_get_load_avg(void)
 {
 	/* TODO: Your implementation goes here */
-	return load_avg;
+	return load_avg * 100;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
 	/* TODO: Your implementation goes here */
-	return thread_current()->recent_cpu;
+	return thread_current()->recent_cpu * 100;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -762,11 +761,18 @@ void mlfq_priority_update()
 
 void mlfq_recent_cpu_update()
 {
-	if(thread_current() == idle_thread) return;
+	// if(thread_current() == idle_thread) return;
 
 	struct list_elem *ptr = list_head(&thread_assemble);
 	/* load_avg변경 */
-	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list));
+	// printf("load_avg 변경 전 : %d\n", load_avg);
+	// printf("59/60 * load_avg: %d\n", X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg));
+	// printf("ready list size : %d\n", list_size(&ready_list)+1);
+	// printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
+	// printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
+	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1);
+
+	// printf("load_avg 변경 후 : %d\n", load_avg);
 
 	/* 전체 순회하면서 recent_cpu 갱신 */
 	while (ptr->next != list_tail(&thread_assemble))
