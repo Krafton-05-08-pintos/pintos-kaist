@@ -133,6 +133,7 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	thread_tick ();
 	
 	if(thread_mlfqs){
+		if(thread_current()->status == THREAD_RUNNING)
 		thread_current()->recent_cpu = X_ADD_N(thread_current()->recent_cpu,1);
 
 		if(timer_ticks() % 4 == 0){

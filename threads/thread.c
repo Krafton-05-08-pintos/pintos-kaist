@@ -208,10 +208,6 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
 
-	/* 전체 리스트에 삽입 */
-	if(name != "idle")
-		list_push_back(&thread_assemble, &(t->assemble_elem));
-
 	/* Add to run queue. */
 	thread_unblock(t);
 	if(!thread_mlfqs){
@@ -331,7 +327,6 @@ void thread_sleep(int64_t ticks)
 
 	struct thread *curr = thread_current();
 	enum intr_level old_level;
-
 	ASSERT(!intr_context());
 
 	old_level = intr_disable();
@@ -341,7 +336,6 @@ void thread_sleep(int64_t ticks)
 		curr->wakeup_time = ticks;
 		list_insert_ordered(&sleep_list, &curr->elem, less_function, NULL);
 	}
-
 	// do_schedule (THREAD_BLOCKED);
 	thread_block();
 
@@ -569,6 +563,9 @@ init_thread(struct thread *t, const char *name, int priority)
 
 	t->nice = 0;
 	t->recent_cpu = 0;
+		/* 전체 리스트에 삽입 */
+	if(*name != "idle")
+		list_push_back(&thread_assemble, &(t->assemble_elem));
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
