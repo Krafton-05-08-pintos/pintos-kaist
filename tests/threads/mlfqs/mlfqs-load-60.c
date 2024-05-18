@@ -104,6 +104,7 @@
 #include "threads/synch.h"
 #include "threads/thread.h"
 #include "devices/timer.h"
+struct list ready_list;
 
 static int64_t start_time;
 
@@ -135,8 +136,8 @@ test_mlfqs_load_60 (void)
       int load_avg;
       timer_sleep (sleep_until - timer_ticks ());
       load_avg = thread_get_load_avg ();
-      msg ("After %d seconds, load average=%d.%02d.",
-           i * 2, load_avg / 100, load_avg % 100);
+      msg ("After %d seconds, load average=%d.%02d., ready_list_size: %d",
+           i * 2, load_avg / 100, load_avg % 100, list_size(&ready_list));
     }
 }
 
