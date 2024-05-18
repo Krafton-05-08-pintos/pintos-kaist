@@ -435,11 +435,10 @@ void thread_set_priority(int new_priority)
 			thread_current()->original_priority = new_priority;
 		}
 	}
-	else{
-		thread_current()->priority = new_priority;
-		context_switch();
-	}
-		
+	// else{
+	// 	thread_current()->priority = new_priority;
+	// 	context_switch();
+	// }
 }
 
 void context_switch(void)
@@ -461,7 +460,7 @@ void thread_set_nice(int nice)
 {
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level = intr_disable();
-
+	thread_current()->priority = thread_current()->priority + 2*thread_current()->nice - 2*nice;
 	thread_current()->nice = nice;
 
 	intr_set_level(old_level);
