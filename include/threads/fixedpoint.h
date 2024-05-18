@@ -11,9 +11,9 @@
 #define X_SUBTRACT_Y(x, y) ((x) - (y))
 #define X_ADD_N(x, n) ((x) + (n)*(F))
 #define X_SUBTRACT_N(x, n) ((x) - (n)*(F))
-#define X_MULTIPLY_Y(x, y) ((int64_t)(x) * (y)/F)
+#define X_MULTIPLY_Y(x, y) (((int64_t)(x)) * (y)/F)
 #define X_MULTIPLY_N(x, n) ((x) * (n))
-#define X_DIVIDE_Y(x, y) ((int64_t)(x) * F / (y))
+#define X_DIVIDE_Y(x, y) (((int64_t)(x)) * F / (y))
 #define X_DIVIDE_N(x, n) ((x) / (n))
 
 

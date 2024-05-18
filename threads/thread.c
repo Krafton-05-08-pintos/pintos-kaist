@@ -56,7 +56,7 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
-int load_avg = 0;
+int load_avg;
 
 static void kernel_thread(thread_func *, void *aux);
 
@@ -113,6 +113,7 @@ void thread_init(void)
 	list_init(&sleep_list);
 	list_init(&destruction_req);
 	list_init(&thread_assemble);
+	load_avg = 0;
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread();
@@ -212,8 +213,10 @@ tid_t thread_create(const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock(t);
-	if (t->priority > thread_current()->priority)
-		thread_yield();
+	if(!thread_mlfqs){
+		if (t->priority > thread_current()->priority)
+			thread_yield();
+	}
 
 	return tid;
 }
@@ -245,9 +248,9 @@ void thread_unblock(struct thread *t)
 	enum intr_level old_level;
 
 	ASSERT(is_thread(t));
+	ASSERT(t->status == THREAD_BLOCKED);
 
 	old_level = intr_disable();
-	ASSERT(t->status == THREAD_BLOCKED);
 
 	list_insert_ordered(&ready_list, &t->elem, high_priority, NULL);
 
@@ -431,8 +434,11 @@ void thread_set_priority(int new_priority)
 			thread_current()->original_priority = new_priority;
 		}
 	}
-	else
+	else{
 		thread_current()->priority = new_priority;
+		context_switch();
+	}
+		
 }
 
 void context_switch(void)
@@ -464,21 +470,30 @@ void thread_set_nice(int nice UNUSED)
 int thread_get_nice(void)
 {
 	/* TODO: Your implementation goes here */
-	return thread_current()->nice;
+	enum intr_level old_level = intr_disable();
+	int ret = thread_current()->nice;
+	intr_set_level(old_level);
+	return ret;
 }
 
 /* Returns 100 times the system load average. */
 int thread_get_load_avg(void)
 {
+	enum intr_level old_level = intr_disable();
 	/* TODO: Your implementation goes here */
-	return load_avg * 100;
+	int ret = FIXED_POINT_TO_INT(load_avg * 100);
+	intr_set_level(old_level);
+	return ret;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
 	/* TODO: Your implementation goes here */
-	return thread_current()->recent_cpu * 100;
+	enum intr_level old_level = intr_disable();
+	int ret = FIXED_POINT_TO_INT(thread_current()->recent_cpu * 100);
+	intr_set_level(old_level);
+	return ret;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -765,14 +780,14 @@ void mlfq_recent_cpu_update()
 
 	struct list_elem *ptr = list_head(&thread_assemble);
 	/* load_avg변경 */
-	// printf("load_avg 변경 전 : %d\n", load_avg);
-	// printf("59/60 * load_avg: %d\n", X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg));
-	// printf("ready list size : %d\n", list_size(&ready_list)+1);
-	// printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
-	// printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
+	printf("load_avg 변경 전 : %d\n", thread_get_load_avg());
+	printf("59/60 * load_avg: %d\n", X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg));
+	printf("ready list size : %d\n", list_size(&ready_list)+1);
+	printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
+	printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
 	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1);
 
-	// printf("load_avg 변경 후 : %d\n", load_avg);
+	printf("load_avg 변경 후 : %d\n\n", thread_get_load_avg());
 
 	/* 전체 순회하면서 recent_cpu 갱신 */
 	while (ptr->next != list_tail(&thread_assemble))
