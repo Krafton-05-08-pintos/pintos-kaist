@@ -25,7 +25,7 @@ typedef int tid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
 
 /* decay */
-#define DECAY ((2*thread_get_load_avg()) / ((2*thread_get_load_avg())+1))
+#define DECAY X_DIVIDE_Y(X_MULTIPLY_N(load_avg, 2), X_ADD_N(X_MULTIPLY_N(load_avg, 2), 1))
 
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
