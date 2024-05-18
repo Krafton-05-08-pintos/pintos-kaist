@@ -202,10 +202,11 @@ void lock_acquire(struct lock *lock)
 
 	struct thread *holder_thread = lock->holder;
 
-	if (holder_thread != NULL && !thread_mlfqs)
+	if (holder_thread != NULL)
 	{
 		thread_current()->wait_on_lock = lock;
-		iter_set_prioity();
+		if(!thread_mlfqs)
+			iter_set_prioity();
 		list_insert_ordered(&(holder_thread->donations), &(thread_current()->delem), high_priority_donation, NULL);
 		// thread_print_list(&(holder_thread->donations));
 	}
@@ -252,43 +253,40 @@ void lock_release(struct lock *lock)
 	lock->holder = NULL;
 	sema_up(&lock->semaphore);
 
-	if(!thread_mlfqs)
+	struct thread *next_holder = NULL;
+	struct thread *cur_thread = thread_current();
+	struct list_elem *ptr = list_begin(&(cur_thread->donations));
+	
+	while (ptr != list_tail(&(cur_thread->donations)))
 	{
-		struct thread *next_holder = NULL;
-		struct thread *cur_thread = thread_current();
-		struct list_elem *ptr = list_begin(&(cur_thread->donations));
-		
-		while (ptr != list_tail(&(cur_thread->donations)))
+		struct thread *t = list_entry(ptr, struct thread, delem);
+		if (t->wait_on_lock == lock)
 		{
-			struct thread *t = list_entry(ptr, struct thread, delem);
-			if (t->wait_on_lock == lock)
+			if (next_holder == NULL)
 			{
-				if (next_holder == NULL)
-				{
-					next_holder = t;
-					list_remove(ptr);
-					ptr = ptr->next;
-				}
-				else
-				{
-					list_remove(ptr);
-					struct list_elem *tmp = ptr;
-					ptr = ptr->next;
-					list_insert_ordered(&next_holder->donations, tmp, high_priority_donation, NULL);
-				}
+				next_holder = t;
+				list_remove(ptr);
+				ptr = ptr->next;
 			}
 			else
+			{
+				list_remove(ptr);
+				struct list_elem *tmp = ptr;
 				ptr = ptr->next;
+				list_insert_ordered(&next_holder->donations, tmp, high_priority_donation, NULL);
+			}
 		}
+		else
+			ptr = ptr->next;
+	}
+	if(!thread_mlfqs){
 		if (!list_empty(&(cur_thread->donations)))
 		{
 			cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)), struct thread, delem)->priority;
 			context_switch();
 		}
 		else
-		{
 			thread_set_priority(cur_thread->original_priority);
-		}
 	}
 }
 

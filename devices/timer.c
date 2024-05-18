@@ -130,19 +130,19 @@ timer_print_stats (void) {
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
-	
-	thread_current()->recent_cpu++;
-
-	if(timer_ticks() % 4 == 0){
-		mlfq_priority_update();
-	}
-
-	if(timer_ticks() % 100 == 0){
-		mlfq_recent_cpu_update();
-	}
-
 	thread_tick ();
+	
+	if(thread_mlfqs){
+		thread_current()->recent_cpu = X_ADD_Y(thread_current()->recent_cpu,1);
 
+		if(timer_ticks() % 4 == 0){
+			mlfq_priority_update();
+		}
+
+		if(timer_ticks() % TIMER_FREQ == 0){
+			mlfq_recent_cpu_update();
+		}
+	}
 	if(min_tick <= ticks){
 		min_tick = thread_wakeup(ticks);
 	}
