@@ -209,7 +209,8 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.eflags = FLAG_IF;
 
 	/* 전체 리스트에 삽입 */
-	list_push_back(&thread_assemble, &(t->assemble_elem));
+	if(name != "idle")
+		list_push_back(&thread_assemble, &(t->assemble_elem));
 
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -456,7 +457,7 @@ int thread_get_priority(void)
 }
 
 /* Sets the current thread's nice value to NICE. */
-void thread_set_nice(int nice UNUSED)
+void thread_set_nice(int nice)
 {
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level = intr_disable();
@@ -761,7 +762,7 @@ allocate_tid(void)
 void mlfq_priority_update()
 {
 
-	if(thread_current() == idle_thread) return;
+	// if(thread_current() == idle_thread) return;
 
 	struct list_elem *ptr = list_head(&thread_assemble);
 	while (ptr->next != list_tail(&thread_assemble))
@@ -772,6 +773,7 @@ void mlfq_priority_update()
 	}
 	
 	list_sort(&ready_list,high_priority, NULL);
+	// context_switch();
 }
 
 void mlfq_recent_cpu_update()
@@ -780,14 +782,14 @@ void mlfq_recent_cpu_update()
 
 	struct list_elem *ptr = list_head(&thread_assemble);
 	/* load_avg변경 */
-	printf("load_avg 변경 전 : %d\n", thread_get_load_avg());
-	printf("59/60 * load_avg: %d\n", X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg));
-	printf("ready list size : %d\n", list_size(&ready_list)+1);
-	printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
-	printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
+	// printf("load_avg 변경 전 : %d\n", thread_get_load_avg());
+	// printf("59/60 * load_avg: %d\n", X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg));
+	// printf("ready list size : %d\n", list_size(&ready_list)+1);
+	// printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
+	// printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
 	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1);
 
-	printf("load_avg 변경 후 : %d\n\n", thread_get_load_avg());
+	// printf("load_avg 변경 후 : %d\n\n", thread_get_load_avg());
 
 	/* 전체 순회하면서 recent_cpu 갱신 */
 	while (ptr->next != list_tail(&thread_assemble))

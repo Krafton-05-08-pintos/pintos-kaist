@@ -133,7 +133,7 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	thread_tick ();
 	
 	if(thread_mlfqs){
-		thread_current()->recent_cpu = X_ADD_Y(thread_current()->recent_cpu,1);
+		thread_current()->recent_cpu = X_ADD_N(thread_current()->recent_cpu,1);
 
 		if(timer_ticks() % 4 == 0){
 			mlfq_priority_update();
