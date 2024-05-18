@@ -787,7 +787,14 @@ void mlfq_recent_cpu_update()
 	// printf("ready list size : %d\n", list_size(&ready_list)+1);
 	// printf("1/60 : %d\n",X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60));
 	// printf("1/60 * ready thread : %d\n", X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1));
-	load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1);
+	if(thread_current() == idle_thread){
+		// printf("current is ""idle"" \n");
+		load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list));
+	}
+	else{
+		// printf("current is not ""idle"" \n");
+		load_avg = X_MULTIPLY_Y(X_DIVIDE_N(INT_TO_FIXED_POINT(59), 60), load_avg) + X_MULTIPLY_N(X_DIVIDE_N(INT_TO_FIXED_POINT(1), 60), list_size(&ready_list)+1);
+	}
 
 	// printf("load_avg 변경 후 : %d\n\n", thread_get_load_avg());
 
