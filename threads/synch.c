@@ -67,7 +67,6 @@ void sema_down(struct semaphore *sema)
 	old_level = intr_disable();
 	while (sema->value == 0)
 	{
-
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, high_priority, NULL);
 		// list_push_back (&sema->waiters, &thread_current ()->elem);
 		thread_block();
@@ -121,8 +120,11 @@ void sema_up(struct semaphore *sema)
 	sema->value++;
 	intr_set_level(old_level);
 	
+	//if(!thread_mlfqs) {
 	if (t->priority > thread_current()->priority)
 		thread_yield();
+	//}
+
 }
 
 static void sema_test_helper(void *sema_);
@@ -201,19 +203,18 @@ void lock_acquire(struct lock *lock)
 	ASSERT(!lock_held_by_current_thread(lock));
 
 	struct thread *holder_thread = lock->holder;
-
-	if (holder_thread != NULL)
+	if (holder_thread != NULL && !thread_mlfqs)
 	{
 		thread_current()->wait_on_lock = lock;
-		if(!thread_mlfqs)
-			iter_set_prioity();
+		iter_set_prioity();
 		list_insert_ordered(&(holder_thread->donations), &(thread_current()->delem), high_priority_donation, NULL);
 		// thread_print_list(&(holder_thread->donations));
 	}
-
+	
 	sema_down(&lock->semaphore);
 
 	lock->holder = thread_current();
+
 	thread_current()->wait_on_lock = NULL;
 }
 
@@ -249,15 +250,16 @@ void lock_release(struct lock *lock)
 	ASSERT(lock != NULL);
 	ASSERT(lock_held_by_current_thread(lock));
 
-	
 	lock->holder = NULL;
 	sema_up(&lock->semaphore);
 
 	struct thread *next_holder = NULL;
 	struct thread *cur_thread = thread_current();
 	struct list_elem *ptr = list_begin(&(cur_thread->donations));
-	
-	if(!thread_mlfqs){
+
+	if(!thread_mlfqs)
+	{
+
 		while (ptr != list_tail(&(cur_thread->donations)))
 		{
 			struct thread *t = list_entry(ptr, struct thread, delem);
@@ -280,6 +282,7 @@ void lock_release(struct lock *lock)
 			else
 				ptr = ptr->next;
 		}
+	
 		if (!list_empty(&(cur_thread->donations)))
 		{
 			cur_thread->priority = list_entry(list_begin(&(cur_thread->donations)), struct thread, delem)->priority;
@@ -288,6 +291,7 @@ void lock_release(struct lock *lock)
 		else
 			thread_set_priority(cur_thread->original_priority);
 	}
+	
 }
 
 /* Returns true if the current thread holds LOCK, false
