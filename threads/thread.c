@@ -454,11 +454,8 @@ void thread_set_nice(int nice)
 {
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level = intr_disable();
+	thread_current()->priority = thread_current()->priority + 2*thread_current()->nice - 2*nice;
 	thread_current()->nice = nice;
-	//thread_current()->priority = thread_current()->priority + 2*thread_current()->nice - 2*nice;
-	thread_current()->priority = PRI_MAX - FIXED_POINT_TO_INT_NEAREST(X_DIVIDE_N(thread_current()->recent_cpu, 4)) - FIXED_POINT_TO_INT(nice * 2);
-	//list_sort(&ready_list,high_priority,NULL);
-	//context_switch();
 
 	intr_set_level(old_level);
 }
@@ -488,7 +485,7 @@ int thread_get_recent_cpu(void)
 {
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level = intr_disable();
-	int ret = FIXED_POINT_TO_INT(X_MULTIPLY_N( thread_current()->recent_cpu,100));
+	int ret = FIXED_POINT_TO_INT(thread_current()->recent_cpu * 100);
 	intr_set_level(old_level);
 	return ret;
 }
@@ -773,8 +770,6 @@ void mlfq_priority_update()
 	
 	list_sort(&ready_list,high_priority, NULL);
 	// context_switch();
-
-	
 }
 
 void mlfq_recent_cpu_update()
@@ -804,12 +799,7 @@ void mlfq_recent_cpu_update()
 	{
 		ptr = ptr->next;
 		struct thread *t = list_entry(ptr, struct thread, assemble_elem);
-		int decay = X_DIVIDE_Y(X_MULTIPLY_N(load_avg,2),(X_ADD_N(X_MULTIPLY_N(load_avg,2),1)));
-		t->recent_cpu = X_ADD_Y(X_MULTIPLY_Y(decay,t->recent_cpu),t->nice);
-		//printf("%d\n",FIXED_POINT_TO_INT(DECAY));
-
-		//if (t->recent_cpu > INT_MAX) t->recent_cpu = INT_MAX;
-		//if (t->recent_cpu < INT_MIN) t->recent_cpu = INT_MIN;
+		t->recent_cpu = X_ADD_N(X_MULTIPLY_Y(DECAY, t->recent_cpu), (t->nice));
 	}
 
 }

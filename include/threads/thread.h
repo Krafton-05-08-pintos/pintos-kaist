@@ -25,9 +25,7 @@ typedef int tid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
 
 /* decay */
-
 #define DECAY X_DIVIDE_Y(X_MULTIPLY_N(load_avg, 2), X_ADD_N(X_MULTIPLY_N(load_avg, 2), 1))
-
 
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
@@ -131,8 +129,6 @@ struct thread {
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
-extern struct list thread_assemble;
-
 // extern int load_avg;
 
 void thread_init (void);
