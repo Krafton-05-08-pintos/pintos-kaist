@@ -7,6 +7,8 @@
 #include "threads/io.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/fixedpoint.h"
+
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -19,6 +21,7 @@
 
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
+static int64_t min_tick = INT64_MAX;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
@@ -91,10 +94,12 @@ timer_elapsed (int64_t then) {
 void
 timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
-
-	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	
+	while (timer_elapsed (start) < ticks){
+		if(min_tick > start+ticks)
+			min_tick = start+ticks;
+		thread_sleep (start+ticks);
+	}
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -120,12 +125,28 @@ void
 timer_print_stats (void) {
 	printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick ();
+	
+	if(thread_mlfqs){
+		if(thread_current()->status == THREAD_RUNNING)
+		thread_current()->recent_cpu = X_ADD_N(thread_current()->recent_cpu,1);
+
+		if(timer_ticks() % 4 == 0){
+			mlfq_priority_update();
+		}
+
+		if(timer_ticks() % TIMER_FREQ == 0){
+			mlfq_recent_cpu_update();
+		}
+	}
+	if(min_tick <= ticks){
+		min_tick = thread_wakeup(ticks);
+	}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

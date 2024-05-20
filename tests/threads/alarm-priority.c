@@ -17,20 +17,20 @@ void
 test_alarm_priority (void) 
 {
   int i;
-  
+
   /* This test does not work with the MLFQS. */
   ASSERT (!thread_mlfqs);
 
   wake_time = timer_ticks () + 5 * TIMER_FREQ;
   sema_init (&wait_sema, 0);
-  
+
   for (i = 0; i < 10; i++) 
-    {
-      int priority = PRI_DEFAULT - (i + 5) % 10 - 1;
-      char name[16];
-      snprintf (name, sizeof name, "priority %d", priority);
-      thread_create (name, priority, alarm_priority_thread, NULL);
-    }
+  {
+    int priority = PRI_DEFAULT - (i + 5) % 10 - 1;
+    char name[16];
+    snprintf (name, sizeof name, "priority %d", priority);
+    thread_create (name, priority, alarm_priority_thread, NULL);
+  }
 
   thread_set_priority (PRI_MIN);
 

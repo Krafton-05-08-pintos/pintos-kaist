@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+#include "threads/fixedpoint.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -22,6 +23,9 @@ enum thread_status {
    You can redefine this to whatever type you like. */
 typedef int tid_t;
 #define TID_ERROR ((tid_t) -1)          /* Error value for tid_t. */
+
+/* decay */
+#define DECAY X_DIVIDE_Y(X_MULTIPLY_N(load_avg, 2), X_ADD_N(X_MULTIPLY_N(load_avg, 2), 1))
 
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
@@ -85,15 +89,27 @@ typedef int tid_t;
  * only because they are mutually exclusive: only a thread in the
  * ready state is on the run queue, whereas only a thread in the
  * blocked state is on a semaphore wait list. */
+
 struct thread {
 	/* Owned by thread.c. */
 	tid_t tid;                          /* Thread identifier. */
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
-
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
+	int64_t wakeup_time;				/* alarm clock에 의해 깨어날 시간 */
+	
+	/* Donation을 위한 변수 TODO: init에 추가 필요 */
+	int original_priority;
+	struct lock *wait_on_lock;
+	struct list_elem delem;
+	struct list donations;
+	struct list_elem assemble_elem;
+
+	int nice;
+	int recent_cpu;
+
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -113,6 +129,7 @@ struct thread {
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+// extern int load_avg;
 
 void thread_init (void);
 void thread_start (void);
@@ -133,8 +150,14 @@ const char *thread_name (void);
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
-int thread_get_priority (void);
-void thread_set_priority (int);
+void thread_sleep(int64_t ticks);
+int64_t thread_wakeup(int64_t ticks);
+void thread_print_list(struct list *list);
+void thread_print_readylist();
+void thread_print_list_bysema(struct list *list);
+
+int thread_get_priority(void);
+void thread_set_priority(int);
 
 int thread_get_nice (void);
 void thread_set_nice (int);
@@ -143,4 +166,12 @@ int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
 
+void mlfq_priority_update();
+void mlfq_recent_cpu_update();
+
+bool less_function(const struct list_elem *a, const struct list_elem *b, void *aux);
+bool high_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+bool high_priority_donation(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+bool high_priority_sema(struct list_elem *a, struct list_elem *b, void *aux UNUSED);
+bool high_priority_donation(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
 #endif /* threads/thread.h */
