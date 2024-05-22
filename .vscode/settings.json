@@ -10,7 +10,8 @@
         "flags.h": "c",
         "timer.h": "c",
         "thread": "c",
-        "fixedpoint.h": "c"
+        "fixedpoint.h": "c",
+        "process.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
