@@ -91,24 +91,29 @@ typedef int tid_t;
  * blocked state is on a semaphore wait list. */
 
 struct thread {
+	/* 상태 머신을 위한 스레드 구조체 정의 */
 	/* Owned by thread.c. */
 	tid_t tid;                          /* Thread identifier. */
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
+	
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
 	int64_t wakeup_time;				/* alarm clock에 의해 깨어날 시간 */
 	
-	/* Donation을 위한 변수 TODO: init에 추가 필요 */
-	int original_priority;
+	/* 임계구역 접근을 위해 추가 */
 	struct lock *wait_on_lock;
+
+	/* Priority Donation 구현을 위해 추가 */
+	int original_priority;
 	struct list_elem delem;
 	struct list donations;
-	struct list_elem assemble_elem;
 
+	/* 4.4BSD 구현을 위해 추가 */
 	int nice;
 	int recent_cpu;
+	struct list_elem assemble_elem;
 
 
 #ifdef USERPROG
@@ -163,6 +168,7 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+void context_switch (void);
 
 void do_iret (struct intr_frame *tf);
 

@@ -13,7 +13,7 @@
 #include "intrinsic.h"
 #ifdef USERPROG
 #include "userprog/process.h"
-#include "thread.h"
+#include "threads/thread.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -211,8 +211,7 @@ tid_t thread_create(const char *name, int priority,
 	/* Add to run queue. */
 	thread_unblock(t);
 	if(!thread_mlfqs){
-		if (t->priority > thread_current()->priority)
-			thread_yield();
+		context_switch();
 	}
 
 	return tid;
@@ -322,6 +321,23 @@ void thread_yield(void)
 	intr_set_level(old_level);
 }
 
+void context_switch (void) {
+  enum intr_level old_level;
+  struct thread *curr = thread_current ();
+  struct thread *ready = list_entry (list_begin (&ready_list), struct thread, elem);
+  
+  if (list_empty(&ready_list))
+    return;
+
+  old_level = intr_disable ();
+
+  if (!intr_context() && curr->priority < ready->priority) {
+    thread_yield ();
+  }
+
+  intr_set_level (old_level);
+}
+
 void thread_sleep(int64_t ticks)
 {
 
@@ -362,6 +378,8 @@ int64_t thread_wakeup(int64_t ticks)
 
 		// list_push_back (&ready_list, &t->elem);
 		thread_unblock(t);
+		if(t->priority > thread_current()->priority)
+			intr_yield_on_return();
 	}
 
 	if (list_empty(&sleep_list))
@@ -433,15 +451,6 @@ void thread_set_priority(int new_priority)
 	// 	thread_current()->priority = new_priority;
 	// 	context_switch();
 	// }
-}
-
-void context_switch(void)
-{
-	enum intr_level old_level = intr_disable();
-	struct thread *ready_front = list_entry(list_begin(&ready_list), struct thread, elem);
-	if (thread_current()->priority < ready_front->priority)
-		thread_yield();
-	intr_set_level(old_level);
 }
 /* Returns the current thread's priority. */
 int thread_get_priority(void)
