@@ -49,9 +49,9 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
-	char* token = strtok_r (file_name, " ", &fn_copy);
+	char* token = strtok_r (NULL, " ", &fn_copy);
 	/* Create a new thread to execute FILE_NAME. */
-	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
+	tid = thread_create (token, PRI_DEFAULT, initd, file_name);
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	return tid;
@@ -177,10 +177,19 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	success = load (file_name, &_if);
-		printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
-	char **parse = str_split(file_name, " ");
-	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", *parse);
 	printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+	
+	char *token, *save_ptr;
+	char **argv;
+	int i = 0;
+	while ((token = strtok_r (NULL, " ", file_name)) != NULL){
+   		argv[i++] = token;
+		printf("argv[%d] : %s\n", i-1, argv[i-1]);
+	}
+
+	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", argv[0]);
+	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", argv[1]);
+	// printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
 	if (!success)
@@ -572,17 +581,6 @@ install_page (void *upage, void *kpage, bool writable) {
 	 * address, then map our page there. */
 	return (pml4_get_page (t->pml4, upage) == NULL
 			&& pml4_set_page (t->pml4, upage, kpage, writable));
-}
-
-char **str_split(char* str, const char *delimiters){
-	char *token, *save_ptr;
-	char **argv;
-	int i = 0;
-	for (token = strtok_r (str, " ", &save_ptr); token != NULL;
-								token = strtok_r (NULL, " ", &save_ptr))
-   	argv[i++] = token;
-
-	return argv;
 }
 
 #else
