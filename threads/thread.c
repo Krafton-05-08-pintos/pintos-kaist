@@ -362,6 +362,8 @@ int64_t thread_wakeup(int64_t ticks)
 
 		// list_push_back (&ready_list, &t->elem);
 		thread_unblock(t);
+		if(t->priority > thread_current()->priority)
+			intr_yield_on_return();
 	}
 
 	if (list_empty(&sleep_list))
