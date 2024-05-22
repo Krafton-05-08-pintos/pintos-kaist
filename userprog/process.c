@@ -42,7 +42,6 @@ tid_t
 process_create_initd (const char *file_name) {
 	char *fn_copy;
 	tid_t tid;
-
 	/* Make a copy of FILE_NAME.
 	 * Otherwise there's a race between the caller and load(). */
 	fn_copy = palloc_get_page (0);
@@ -50,6 +49,7 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
+	char* token = strtok_r (file_name, " ", &fn_copy);
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR)
@@ -63,7 +63,8 @@ initd (void *f_name) {
 #ifdef VM
 	supplemental_page_table_init (&thread_current ()->spt);
 #endif
-
+	printf("f_name in initd %s *****************\n", f_name);
+	printf("f_name in initd %s *****************\n", f_name);
 	process_init ();
 
 	if (process_exec (f_name) < 0)
@@ -164,7 +165,6 @@ int
 process_exec (void *f_name) {
 	char *file_name = f_name;
 	bool success;
-
 	/* We cannot use the intr_frame in the thread structure.
 	 * This is because when current thread rescheduled,
 	 * it stores the execution information to the member. */
@@ -175,10 +175,12 @@ process_exec (void *f_name) {
 
 	/* We first kill the current context */
 	process_cleanup ();
-
 	/* And then load the binary */
 	success = load (file_name, &_if);
-
+		printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+	char **parse = str_split(file_name, " ");
+	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", *parse);
+	printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
 	if (!success)
@@ -204,6 +206,8 @@ process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+	while (child_tid);
+	
 	return -1;
 }
 
@@ -569,6 +573,18 @@ install_page (void *upage, void *kpage, bool writable) {
 	return (pml4_get_page (t->pml4, upage) == NULL
 			&& pml4_set_page (t->pml4, upage, kpage, writable));
 }
+
+char **str_split(char* str, const char *delimiters){
+	char *token, *save_ptr;
+	char **argv;
+	int i = 0;
+	for (token = strtok_r (str, " ", &save_ptr); token != NULL;
+								token = strtok_r (NULL, " ", &save_ptr))
+   	argv[i++] = token;
+
+	return argv;
+}
+
 #else
 /* From here, codes will be used after project 3.
  * If you want to implement the function for only project 2, implement it on the
