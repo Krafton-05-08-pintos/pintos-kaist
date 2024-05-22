@@ -180,16 +180,14 @@ process_exec (void *f_name) {
 	printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	
 	char *token, *save_ptr;
-	char **argv;
+	char *argv[128];
 	int i = 0;
-	while ((token = strtok_r (NULL, " ", file_name)) != NULL){
+	for (token = strtok_r (file_name, " ", &save_ptr); token != NULL;
+								token = strtok_r (NULL, " ", &save_ptr)){
    		argv[i++] = token;
 		printf("argv[%d] : %s\n", i-1, argv[i-1]);
 	}
-
-	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", argv[0]);
-	printf("parse is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", argv[1]);
-	// printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+	
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
 	if (!success)
