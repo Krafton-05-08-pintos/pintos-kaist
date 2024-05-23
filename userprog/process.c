@@ -200,7 +200,7 @@ process_exec (void *f_name) {
 	printf("rsp의 주소 :%p\n\n", &(_if.rsp));
 	
 	printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
-	hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
+	// hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
@@ -597,6 +597,7 @@ install_page (void *upage, void *kpage, bool writable) {
 
 void argument_stack(char **parse, int count, struct intr_frame *if_){
 	int sum = 0;
+	char *stack_address[128];
 
 	printf("start rsp : %p\n", (if_->rsp));
 	printf("start rsp : %d\n", (if_->rsp));
@@ -605,22 +606,30 @@ void argument_stack(char **parse, int count, struct intr_frame *if_){
 		int l = strlen(parse[i])+1;
 		if_->rsp -= l;
 		sum += l;
+		stack_address[i] = if_->rsp;
 		strlcpy(if_->rsp, parse[i], l);
 		printf("l : %d\n", l);
 		// printf("rsp : %s\n", if_->rsp);
 		printf("rsp 값: %p\n", (if_->rsp));
-		printf("rsp 에 저장된 내용 : %s\n", if_->rsp);
+		printf("rsp 에 저장된 내용 : %p\n", stack_address[i]);
 	}
 
+	/* 패딩 추가 */
 	int padding = 8-(sum%8);
-	uint8_t pad = 0;
 	for(int i=0; i<padding; i++){
 		if_->rsp -= 1;
-		strlcpy(if_->rsp, &pad, 1);
-		// *(if_->rsp) = pad;
+		memset(if_->rsp,0, 1);
 	}
-	
-	printf("rsp : %X\n", if_->rsp);
+
+	/* 인자의 주소 */
+	for(int i=count-1; i>=0; i--){
+		if_->rsp -= 8;
+		// strlcpy(if_->rsp, stack_address[i], 8);
+		memcpy(if_->rsp, stack_address[i], 8);
+		printf(" rsp : %p\n", if_->rsp);
+		printf(" rsp : %p\n", stack_address[i]);
+	}
+
 	printf("마지막 rsp : %p\n", if_->rsp);
 }
 
