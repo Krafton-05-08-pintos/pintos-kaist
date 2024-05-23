@@ -38,29 +38,46 @@ syscall_init (void) {
 }
 
 /* The main system call interface */
+
+bool validation(uint64_t *ptr){
+	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
+	printf("-----------validation start %p-----------\n", ptr);
+	if(is_kernel_vaddr(ptr))
+		return false;
+	return true;
+}
+
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
 
 	uint64_t number = f->R.rax;
-	validation(f);
-	set_kernel_stack(f);
+	// validation(f);
+	// set_kernel_stack(f);
 
 	switch(number){
 		case SYS_HALT:
-			halt();
+			sys_halt();
 			break;
 		case SYS_EXIT:
-			exit();
-			break;
-		case SYS_EXEC:
-			exec();
-			break;
-		case SYS_WAIT:
-			wait();
+			sys_exit();
 			break;
 		case SYS_FORK:
-			fork();
+			if(!validation(f->R.rdi)){
+				printf("is not valid\n");
+				sys_exit();
+			}
+			sys_fork();
+			break;
+		case SYS_EXEC:
+			if(!validation(f->R.rdi)){
+				printf("is not valid\n");
+				sys_exit();
+			}
+			sys_exec();
+			break;
+		case SYS_WAIT:
+			sys_wait();
 			break;
 		default:
 			break;
