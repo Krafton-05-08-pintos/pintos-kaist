@@ -11,7 +11,8 @@
         "timer.h": "c",
         "thread": "c",
         "fixedpoint.h": "c",
-        "process.h": "c"
+        "process.h": "c",
+        "interrupt.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
