@@ -188,6 +188,12 @@ process_exec (void *f_name) {
 		printf("argv[%d] : %s\n", i-1, argv[i-1]);
 	}
 	
+	argument_stack(&argv, i, &_if.rsp);
+	printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
+	printf("rsp :%p\n", _if.rsp);
+	
+	// hex_dump(&_if.rsp, &_if.rsp, _if.rsp - LOADER_PHYS_BASE, true);
+
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
 	if (!success)
@@ -579,6 +585,31 @@ install_page (void *upage, void *kpage, bool writable) {
 	 * address, then map our page there. */
 	return (pml4_get_page (t->pml4, upage) == NULL
 			&& pml4_set_page (t->pml4, upage, kpage, writable));
+}
+
+void argument_stack(char **parse, int count, char *rsp){
+	int sum = 0;
+
+	printf("start rsp : %p\n", rsp);
+	for(int i=count-1; i>=0; i--){
+		int l = strlen(parse[i])+1;
+		rsp -= l;
+		sum += l;
+		strlcpy(rsp, parse[i], l);
+		printf("l : %d\n", l);
+		printf("rsp : %s\n", rsp);
+		printf("rsp주소: %p\n", rsp);
+	}
+
+	int padding = 8-(sum%8);
+	uint8_t pad = 0;
+	for(int i=0; i<padding; i++){
+		rsp -= 1;
+		*rsp = pad;
+	}
+	
+	printf("rsp : %d\n", *rsp);
+	printf("rsp주소: %p\n", rsp);
 }
 
 #else
