@@ -173,12 +173,8 @@ process_exec (void *f_name) {
 	_if.cs = SEL_UCSEG;
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
-	/* We first kill the current context */
-	process_cleanup ();
-	/* And then load the binary */
-	success = load (file_name, &_if);
-	printf("file name is %s !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
-	
+
+	printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	char *token, *save_ptr;
 	char *argv[128];
 	int i = 0;
@@ -187,12 +183,24 @@ process_exec (void *f_name) {
    		argv[i++] = token;
 		printf("argv[%d] : %s\n", i-1, argv[i-1]);
 	}
+	printf("파싱 후 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+
+	/* We first kill the current context */
+	process_cleanup ();
+	/* And then load the binary */
+	success = load (file_name, &_if);
 	
-	argument_stack(&argv, i, &_if.rsp);
+	printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
+
+	argument_stack(&argv, i, &_if);
 	printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
-	printf("rsp :%p\n", _if.rsp);
+	printf("LOADER_KERN_BASE : %p\n", LOADER_KERN_BASE);
+	printf("rsp hex :%x\n", _if.rsp);
+	printf("rsp의 dec :%lld\n", _if.rsp);
+	printf("rsp의 주소 :%p\n\n", &(_if.rsp));
 	
-	// hex_dump(&_if.rsp, &_if.rsp, _if.rsp - LOADER_PHYS_BASE, true);
+	printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
+	hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
@@ -427,10 +435,10 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;
-
+	
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
-
+	
 	/* TODO: Your code goes here.
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
 
@@ -587,29 +595,33 @@ install_page (void *upage, void *kpage, bool writable) {
 			&& pml4_set_page (t->pml4, upage, kpage, writable));
 }
 
-void argument_stack(char **parse, int count, char *rsp){
+void argument_stack(char **parse, int count, struct intr_frame *if_){
 	int sum = 0;
 
-	printf("start rsp : %p\n", rsp);
+	printf("start rsp : %p\n", (if_->rsp));
+	printf("start rsp : %d\n", (if_->rsp));
+	printf("start rsp 값 : %x\n", if_->rsp);
 	for(int i=count-1; i>=0; i--){
 		int l = strlen(parse[i])+1;
-		rsp -= l;
+		if_->rsp -= l;
 		sum += l;
-		strlcpy(rsp, parse[i], l);
+		strlcpy(if_->rsp, parse[i], l);
 		printf("l : %d\n", l);
-		printf("rsp : %s\n", rsp);
-		printf("rsp주소: %p\n", rsp);
+		// printf("rsp : %s\n", if_->rsp);
+		printf("rsp 값: %p\n", (if_->rsp));
+		printf("rsp 에 저장된 내용 : %s\n", if_->rsp);
 	}
 
 	int padding = 8-(sum%8);
 	uint8_t pad = 0;
 	for(int i=0; i<padding; i++){
-		rsp -= 1;
-		*rsp = pad;
+		if_->rsp -= 1;
+		strlcpy(if_->rsp, &pad, 1);
+		// *(if_->rsp) = pad;
 	}
 	
-	printf("rsp : %d\n", *rsp);
-	printf("rsp주소: %p\n", rsp);
+	printf("rsp : %X\n", if_->rsp);
+	printf("마지막 rsp : %p\n", if_->rsp);
 }
 
 #else
