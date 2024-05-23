@@ -266,7 +266,7 @@ process_cleanup (void) {
 		 * cur->pagedir to NULL before switching page directories,
 		 * so that a timer interrupt can't switch back to the
 		 * process page directory.  We must activate the base page
-		 * directory before destroying the process's page
+		 * directory before destroying the process's pageㅡ 
 		 * directory, or our active page directory will be one
 		 * that's been freed (and cleared). */
 		curr->pml4 = NULL;

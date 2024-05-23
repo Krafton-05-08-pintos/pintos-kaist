@@ -41,6 +41,32 @@ syscall_init (void) {
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
+
+	uint64_t number = f->R.rax;
+	validation(f);
+	set_kernel_stack(f);
+
+	switch(number){
+		case SYS_HALT:
+			halt();
+			break;
+		case SYS_EXIT:
+			exit();
+			break;
+		case SYS_EXEC:
+			exec();
+			break;
+		case SYS_WAIT:
+			wait();
+			break;
+		case SYS_FORK:
+			fork();
+			break;
+		default:
+			break;
+	}
+
+
 	printf ("system call!\n");
 	thread_exit ();
 }
