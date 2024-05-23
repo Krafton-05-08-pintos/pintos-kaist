@@ -198,9 +198,13 @@ process_exec (void *f_name) {
 	printf("rsp hex :%x\n", _if.rsp);
 	printf("rsp의 dec :%lld\n", _if.rsp);
 	printf("rsp의 주소 :%p\n\n", &(_if.rsp));
-	
+
+	printf("rsi = %p\n", _if.R.rsi);
+	printf("rdi = %d\n\n", _if.R.rdi);
+
 	printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
 	hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
+
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
@@ -636,13 +640,17 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	}
 
 	/* argv */
-	uintptr_t tmp = if_->rsp;
-	if_->rsp -= 8;
-	memcpy(if_->rsp, tmp, 7);
+	// uintptr_t tmp = if_->rsp;
+	// if_->rsp -= 8;
+	// memcpy(if_->rsp, tmp, 7);
+	if_->R.rsi = if_->rsp;
+	printf("rsi = %p\n", if_->R.rsi);
 
 	/* argc */
-	if_->rsp -= sizeof(int64_t);
-	memcpy(if_->rsp, &count, sizeof(int64_t)-1);
+	// if_->rsp -= sizeof(int64_t);
+	// memcpy(if_->rsp, &count, sizeof(int64_t)-1);
+	if_->R.rdi = count;
+	printf("rdi = %d\n", if_->R.rdi);
 
 	/* return_address */
 	if_->rsp -= 8;
