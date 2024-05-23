@@ -200,7 +200,7 @@ process_exec (void *f_name) {
 	printf("rsp의 주소 :%p\n\n", &(_if.rsp));
 	
 	printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
-	// hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
+	hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
@@ -595,9 +595,9 @@ install_page (void *upage, void *kpage, bool writable) {
 			&& pml4_set_page (t->pml4, upage, kpage, writable));
 }
 
-void argument_stack(char **parse, int count, struct intr_frame *if_){
+void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	int sum = 0;
-	char *stack_address[128];
+	uintptr_t stack_address[128];
 
 	printf("start rsp : %p\n", (if_->rsp));
 	printf("start rsp : %d\n", (if_->rsp));
@@ -620,15 +620,33 @@ void argument_stack(char **parse, int count, struct intr_frame *if_){
 		if_->rsp -= 1;
 		memset(if_->rsp,0, 1);
 	}
+	if_->rsp -= 8;
+	memset(if_->rsp,0, 8);
+	printf("패딩 추가 후 rsp 값: %p\n", (if_->rsp));
 
 	/* 인자의 주소 */
 	for(int i=count-1; i>=0; i--){
 		if_->rsp -= 8;
 		// strlcpy(if_->rsp, stack_address[i], 8);
-		memcpy(if_->rsp, stack_address[i], 8);
-		printf(" rsp : %p\n", if_->rsp);
-		printf(" rsp : %p\n", stack_address[i]);
+		// memcpy(if_->rsp, stack_address[i], 7);
+		strlcpy(if_->rsp, stack_address[i], 8);
+		printf(" [%d]rsp : %p\n", i, if_->rsp);
+		printf(" stack_address 크기 : %d", sizeof(stack_address[i])-1);
+		printf(" rsp 안에 들어있는 값 : %p\n", stack_address[i]);
 	}
+
+	/* argv */
+	uintptr_t tmp = if_->rsp;
+	if_->rsp -= 8;
+	memcpy(if_->rsp, tmp, 7);
+
+	/* argc */
+	if_->rsp -= sizeof(int64_t);
+	memcpy(if_->rsp, &count, sizeof(int64_t)-1);
+
+	/* return_address */
+	if_->rsp -= 8;
+	memset(if_->rsp,0, 8);
 
 	printf("마지막 rsp : %p\n", if_->rsp);
 }
