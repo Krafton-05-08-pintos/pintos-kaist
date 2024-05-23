@@ -628,8 +628,8 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	for(int i=count-1; i>=0; i--){
 		if_->rsp -= 8;
 		// strlcpy(if_->rsp, stack_address[i], 8);
-		// memcpy(if_->rsp, stack_address[i], 7);
-		strlcpy(if_->rsp, stack_address[i], 8);
+		memcpy(if_->rsp, &stack_address[i], 7);
+		// strlcpy(if_->rsp, stack_address[i], 8);
 		printf(" [%d]rsp : %p\n", i, if_->rsp);
 		printf(" stack_address 크기 : %d", sizeof(stack_address[i])-1);
 		printf(" rsp 안에 들어있는 값 : %p\n", stack_address[i]);
