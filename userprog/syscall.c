@@ -62,7 +62,7 @@ void sys_exit(int status){
 	sema_up();
 	thread_exit();
 	
-	return status;
+	return;
 }
 
 int sys_exec (const char *cmd_line){
@@ -72,13 +72,36 @@ int sys_exec (const char *cmd_line){
 	}
 }
 
+void sys_write(struct intr_frame *f)
+{
+    if (!validation(f->R.rsi))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+	/* 표준 출력 */
+	if(f->R.rdi == 1)
+    	putbuf(f->R.rsi, f->R.rdx);
+	else{
+		printf("아직 파일 디스크립터 구현 안함\n");
+	}
+}
+
+
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
 
 	uint64_t number = f->R.rax;
-	printf("system call number : %d", number);
-	printf("SYS_HALT : %d", SYS_HALT);
+	
+	printf("system call number : %d\n", number);
+	printf("f->rdi : %d\n", f->R.rdi);
+	printf("f->rsi : %s\n", f->R.rsi);
+	printf("f->rdx : %d\n", f->R.rdx);
+	printf("f->r10 : %d\n", f->R.r10);
+	printf("f->r8 : %d\n", f->R.r8);
+	printf("f->r9 : %d\n", f->R.r9);
+	printf("SYS_HALT : %d\n", SYS_HALT);
 
 	switch(number){
 		case SYS_HALT:
@@ -86,31 +109,35 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			// set_kernel_stack(f);
 			break;
 		// case SYS_EXIT:
-		// 	sys_exit();
+		// 	sys_exit(0);
 		// 	set_kernel_stack(f);
 		// 	break;
-		// case SYS_FORK:
-		// 	if(!validation(f->R.rdi)){
-		// 		printf("is not valid\n");
-		// 		sys_exit();
-		// 	}
+		case SYS_FORK:
+			if(!validation(f->R.rdi)){
+				printf("is not valid\n");
+				sys_exit(0);
+			}
 		// 	set_kernel_stack(f);
 		// 	sys_fork();
 		// 	break;
 		// case SYS_EXEC:
 		// 	if(!validation(f->R.rdi)){
 		// 		printf("is not valid\n");
-		// 		sys_exit();
+		// 		sys_exit(0);
 		// 	}
 		// 	set_kernel_stack(f);
 		// 	sys_exec();
 		// 	break;
-		// case SYS_WAIT:
-		// 	sys_wait();
-		// 	set_kernel_stack(f);
-		// 	break;
-		// default:
-		// 	break;
+		case SYS_WAIT:
+			sys_wait();
+			set_kernel_stack(f);
+			break;
+		case SYS_WRITE:
+            sys_write(f);
+            // printf("%s", f->R.rsi);
+			return;
+		default:
+			break;
 	}
 
 
