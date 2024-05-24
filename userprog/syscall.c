@@ -47,40 +47,69 @@ bool validation(uint64_t *ptr){
 	return true;
 }
 
+void set_kernel_stack(struct intr_frame *f){
+	
+}
+
+void sys_halt(){
+	printf("--------start sys_halt--------\n");
+	power_off();
+}
+
+void sys_exit(int status){
+	struct thread *cur_t = thread_current();
+	printf("%s: exit(%d)", cur_t->name, status);
+	sema_up();
+	thread_exit();
+	
+	return status;
+}
+
+int sys_exec (const char *cmd_line){
+	int result = process_exec (cmd_line);
+	if (result = -1){
+		return -1;
+	}
+}
+
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
 
 	uint64_t number = f->R.rax;
-	// validation(f);
-	// set_kernel_stack(f);
+	
 
 	switch(number){
 		case SYS_HALT:
 			sys_halt();
+			set_kernel_stack(f);
 			break;
-		case SYS_EXIT:
-			sys_exit();
-			break;
-		case SYS_FORK:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit();
-			}
-			sys_fork();
-			break;
-		case SYS_EXEC:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit();
-			}
-			sys_exec();
-			break;
-		case SYS_WAIT:
-			sys_wait();
-			break;
-		default:
-			break;
+		// case SYS_EXIT:
+		// 	sys_exit();
+		// 	set_kernel_stack(f);
+		// 	break;
+		// case SYS_FORK:
+		// 	if(!validation(f->R.rdi)){
+		// 		printf("is not valid\n");
+		// 		sys_exit();
+		// 	}
+		// 	set_kernel_stack(f);
+		// 	sys_fork();
+		// 	break;
+		// case SYS_EXEC:
+		// 	if(!validation(f->R.rdi)){
+		// 		printf("is not valid\n");
+		// 		sys_exit();
+		// 	}
+		// 	set_kernel_stack(f);
+		// 	sys_exec();
+		// 	break;
+		// case SYS_WAIT:
+		// 	sys_wait();
+		// 	set_kernel_stack(f);
+		// 	break;
+		// default:
+		// 	break;
 	}
 
 

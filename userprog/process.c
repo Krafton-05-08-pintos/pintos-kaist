@@ -49,9 +49,9 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
-	char* token = strtok_r (NULL, " ", &fn_copy);
+	file_name = strtok_r (NULL, " ", &file_name);
 	/* Create a new thread to execute FILE_NAME. */
-	tid = thread_create (token, PRI_DEFAULT, initd, file_name);
+	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	return tid;
@@ -174,6 +174,9 @@ process_exec (void *f_name) {
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
 
+
+	
+
 	printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	char *token, *save_ptr;
 	char *argv[128];
@@ -189,8 +192,8 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	success = load (file_name, &_if);
-	
-	printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
+
+	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
 	argument_stack(&argv, i, &_if);
 	printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
@@ -207,10 +210,13 @@ process_exec (void *f_name) {
 
 
 	/* If load failed, quit. */
-	palloc_free_page (file_name);
 	if (!success)
+	{
+		printf("load fail quit----[%s]------------\n",file_name);
+		palloc_free_page (file_name);
 		return -1;
-
+	}
+	palloc_free_page (file_name);
 	/* Start switched process. */
 	do_iret (&_if);
 	NOT_REACHED ();
@@ -231,8 +237,11 @@ process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	while (child_tid);
-	
+	// while (child_tid);
+	int j=1;
+	for(int i=0; i<j; i++){
+		j++;
+	}
 	return -1;
 }
 
@@ -244,7 +253,7 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-
+	
 	process_cleanup ();
 }
 
