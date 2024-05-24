@@ -175,7 +175,6 @@ process_exec (void *f_name) {
 
 
 
-	
 
 	printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	char *token, *save_ptr;
@@ -218,7 +217,7 @@ process_exec (void *f_name) {
 	}
 	palloc_free_page (file_name);
 	/* Start switched process. */
-	do_iret (&_if);
+	do_iret  	(&_if);
 	NOT_REACHED ();
 }
 
