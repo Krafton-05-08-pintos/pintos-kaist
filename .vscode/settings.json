@@ -22,6 +22,8 @@
         "*.tcc": "c",
         "fstream": "c",
         "sstream": "c",
+        "syscall.h": "c",
+        "types.h": "c",
         "main.h": "c",
         "lib.h": "c"
     },
