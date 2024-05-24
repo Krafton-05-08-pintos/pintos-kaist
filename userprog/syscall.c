@@ -7,6 +7,7 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
+#include "user/syscall.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -51,19 +52,26 @@ void set_kernel_stack(struct intr_frame *f){
 	
 }
 
+struct file* return_file(int fd) {
+	struct thread *t = thread_current();
+	return t->fdt[fd];
+}
+
+
 void sys_halt(){
 	printf("--------start sys_halt--------\n");
 	power_off();
 }
 
-void sys_exit(int status){
+void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
+
 	printf("%s: exit(%d)", cur_t->name, status);
 	sema_up();
 	thread_exit();
-	
 	return;
 }
+
 
 int sys_exec (const char *cmd_line){
 	int result = process_exec (cmd_line);
@@ -72,19 +80,138 @@ int sys_exec (const char *cmd_line){
 	}
 }
 
-void sys_write(struct intr_frame *f)
-{
-    if (!validation(f->R.rsi))
+
+pid_t
+sys_fork (const char *thread_name){
+	if (!validation(thread_name))
     {
         printf("is not valid\n");
         sys_exit(0);
     }
-	/* 표준 출력 */
-	if(f->R.rdi == 1)
-    	putbuf(f->R.rsi, f->R.rdx);
-	else{
-		printf("아직 파일 디스크립터 구현 안함\n");
+}
+
+
+bool
+sys_create (const char *file, unsigned initial_size) {
+	
+	if (!validation(file))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+
+	return filesys_create(file,initial_size);
+}
+
+bool
+sys_remove (const char *file) {
+	if (!validation(file))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+
+	return filesys_remove(file);
+}
+
+int
+fine_next_fd(struct thread *t) {
+
+	int cur_fd = t->next_fd;
+	while(cur_fd < 64)
+	{
+		if(t->fdt[cur_fd] == NULL) {
+			t->next_fd = cur_fd;
+			return 1;
+		}
+		cur_fd++;
 	}
+
+	return -1;
+}
+
+
+int
+sys_open (const char *file) {
+	if (!validation(file))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+
+	struct thread* t = thread_current();
+	int cur_fd = t->next_fd;
+	t->fdt[cur_fd] = file;
+
+	if(fine_next_fd(t) == -1) {
+		printf("파일 디스크립터 다 참^^");
+		//thread_exit(0);
+	}
+
+	return cur_fd;
+}
+
+
+int
+sys_filesize (int fd) {
+	return file_length(return_file(fd));
+}
+
+int
+sys_read (int fd, void *buffer, unsigned size) {
+	if (!validation(buffer))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+	
+	int byte_size = 0;
+	if(fd == 0) 
+		input_getc();
+	else 
+		byte_size = file_read(return_file(fd),buffer,size);
+	
+	/* TODO: 실패시, -1 반환 구현 예정 */	
+
+	return byte_size;
+}
+
+int
+sys_write (int fd, const void *buffer, unsigned size) {
+	if (!validation(buffer))
+    {
+        printf("is not valid\n");
+        sys_exit(0);
+    }
+
+	int byte_size = 0;
+	/* 표준 출력 */
+	if(fd == 1)
+    	putbuf(buffer,size);
+	else{
+		byte_size = file_write(return_file(fd), buffer,size);
+	}
+	return byte_size;
+}
+
+void
+sys_seek (int fd, unsigned position) {
+	
+	file_seek(return_file(fd),position);
+}
+
+unsigned
+sys_tell (int fd) {
+
+	file_tell(return_file(fd));
+}
+
+void
+sys_close (int fd) {
+	file_close(return_file(fd));	
+	struct thread *t = thread_current();
+	if(fd < t->next_fd)
+		t->next_fd = fd;
 }
 
 
@@ -108,38 +235,102 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			sys_halt();
 			// set_kernel_stack(f);
 			break;
+
 		// case SYS_EXIT:
 		// 	sys_exit(0);
 		// 	set_kernel_stack(f);
 		// 	break;
-		case SYS_FORK:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit(0);
-			}
+
+		// case SYS_FORK:
 		// 	set_kernel_stack(f);
 		// 	sys_fork();
 		// 	break;
+
 		// case SYS_EXEC:
 		// 	if(!validation(f->R.rdi)){
 		// 		printf("is not valid\n");
 		// 		sys_exit(0);
 		// 	}
+
 		// 	set_kernel_stack(f);
 		// 	sys_exec();
 		// 	break;
-		case SYS_WAIT:
-			sys_wait();
-			set_kernel_stack(f);
+
+		// case SYS_WAIT:
+		// 	sys_wait();
+		// 	set_kernel_stack(f);
+			//break;
+		
+		case SYS_CREATE:
+			// char * file_name = ;
+			// unsigned initial_size = ;
+
+            f->R.rax = sys_create(f->R.rdi,f->R.rsi);
 			break;
+
+		
+		case SYS_REMOVE:
+			//char * file_name = f->R.rdi;
+	
+            f->R.rax = sys_remove( f->R.rdi);
+			break;
+
+		
+		case SYS_OPEN:
+			//char * file_name = f->R.rdi;
+
+            f->R.rax = sys_open(f->R.rdi);        
+			break;
+
+		case SYS_FILESIZE:
+			//int fd = f->R.rdi;
+
+            f->R.rax = sys_filesize(f->R.rdi);
+			break;
+
+
+		case SYS_READ:
+			// int fd = f->R.rdi;
+			// const void *buffer = f->R.rsi;
+			// unsigned size = f->R.rdx;
+
+            f->R.rax = sys_read(f->R.rdi,f->R.rsi,f->R.rdx);
+			break;
+
+
 		case SYS_WRITE:
-            sys_write(f);
-            // printf("%s", f->R.rsi);
-			return;
+			// int fd = f->R.rdi;
+			// const void *buffer = f->R.rsi;
+			// unsigned size = f->R.rdx;
+
+            f->R.rax = sys_write(f->R.rdi,f->R.rsi,f->R.rdx);
+			break;
+
+
+		case SYS_SEEK:
+			// int fd = f->R.rdi;
+			// unsigned position = f->R.rsi;
+
+			sys_seek(f->R.rdi, f->R.rsi);
+
+			break;
+
+
+		case SYS_TELL:
+			// int fd = f->R.rdi;
+
+            f->R.rax = sys_tell(f->R.rdi);
+			break;
+
+
+		case SYS_CLOSE:
+			// int fd = f->R.rdi;
+            sys_close(f->R.rdi);
+			break;
+
 		default:
 			break;
 	}
-
 
 	printf ("system call!\n");
 	thread_exit ();

@@ -15,7 +15,13 @@
         "interrupt.h": "c",
         "gdt.h": "c",
         "*.inc": "c",
-        "intrinsic.h": "c"
+        "intrinsic.h": "c",
+        "string_view": "c",
+        "stdbool.h": "c",
+        "atomic": "c",
+        "*.tcc": "c",
+        "fstream": "c",
+        "sstream": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

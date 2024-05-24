@@ -128,6 +128,8 @@ struct thread {
 	/* Owned by thread.c. */
 	struct intr_frame tf;               /* Information for switching */
 	unsigned magic;                     /* Detects stack overflow. */
+	struct file* fdt[64];               /* file descriptor table 추가 */
+	int next_fd;                        /* 가용한 다음 fd */
 };
 
 /* If false (default), use round-robin scheduler.
