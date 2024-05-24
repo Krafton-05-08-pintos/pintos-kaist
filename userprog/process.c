@@ -174,8 +174,6 @@ process_exec (void *f_name) {
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
 
-
-
 	printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	char *token, *save_ptr;
 	char *argv[128];
