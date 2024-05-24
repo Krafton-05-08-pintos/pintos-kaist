@@ -43,6 +43,8 @@ syscall_init (void) {
 bool validation(uint64_t *ptr){
 	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
 	printf("-----------validation start %p-----------\n", ptr);
+	if (ptr == NULL)
+		return false;
 	if(is_kernel_vaddr(ptr))
 		return false;
 	return true;
@@ -66,8 +68,8 @@ void sys_halt(){
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
 
-	printf("%s: exit(%d)", cur_t->name, status);
-	sema_up();
+	printf("%s: exit(%d)\n", cur_t->name, status);
+	// sema_up();
 	thread_exit();
 	return;
 }
@@ -236,10 +238,10 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			// set_kernel_stack(f);
 			break;
 
-		// case SYS_EXIT:
-		// 	sys_exit(0);
-		// 	set_kernel_stack(f);
-		// 	break;
+		case SYS_EXIT:
+			sys_exit(f->R.rdi);
+			// set_kernel_stack(f);
+			break;
 
 		// case SYS_FORK:
 		// 	set_kernel_stack(f);
@@ -264,29 +266,28 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		case SYS_CREATE:
 			// char * file_name = ;
 			// unsigned initial_size = ;
-
             f->R.rax = sys_create(f->R.rdi,f->R.rsi);
-			break;
+			return;
 
 		
 		case SYS_REMOVE:
 			//char * file_name = f->R.rdi;
 	
             f->R.rax = sys_remove( f->R.rdi);
-			break;
+			return;
 
 		
 		case SYS_OPEN:
 			//char * file_name = f->R.rdi;
 
             f->R.rax = sys_open(f->R.rdi);        
-			break;
+			return;
 
 		case SYS_FILESIZE:
 			//int fd = f->R.rdi;
 
             f->R.rax = sys_filesize(f->R.rdi);
-			break;
+			return;
 
 
 		case SYS_READ:
@@ -295,7 +296,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			// unsigned size = f->R.rdx;
 
             f->R.rax = sys_read(f->R.rdi,f->R.rsi,f->R.rdx);
-			break;
+			return;
 
 
 		case SYS_WRITE:
@@ -304,7 +305,8 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			// unsigned size = f->R.rdx;
 
             f->R.rax = sys_write(f->R.rdi,f->R.rsi,f->R.rdx);
-			break;
+			return;
+			// break;
 
 
 		case SYS_SEEK:
@@ -313,20 +315,20 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 			sys_seek(f->R.rdi, f->R.rsi);
 
-			break;
+			return;
 
 
 		case SYS_TELL:
 			// int fd = f->R.rdi;
 
             f->R.rax = sys_tell(f->R.rdi);
-			break;
+			return;
 
 
 		case SYS_CLOSE:
 			// int fd = f->R.rdi;
             sys_close(f->R.rdi);
-			break;
+			return;
 
 		default:
 			break;
