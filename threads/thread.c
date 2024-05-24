@@ -185,8 +185,8 @@ tid_t thread_create(const char *name, int priority,
 {
 	struct thread *t;
 	tid_t tid;
-	printf("create thread :: [name] - %s\n", name);
-	printf("create thread :: [name] - %s\n", aux);
+	//printf("create thread :: [name] - %s\n", name);
+	//printf("create thread :: [name] - %s\n", aux);
 	ASSERT(function != NULL);
 
 	/* Allocate thread. */
