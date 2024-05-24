@@ -43,16 +43,17 @@ syscall_init (void) {
 bool validation(uint64_t *ptr){
 	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
 	printf("-----------validation start %p-----------\n", ptr);
-	if (ptr == NULL)
+	struct thread *t = thread_current();
+	if(ptr == NULL || is_user_pte(t->pml4)){
+		pml4_destroy(t->pml4);
 		return false;
-	if(is_kernel_vaddr(ptr))
-		return false;
+	}
 	return true;
 }
 
-void set_kernel_stack(struct intr_frame *f){
+// void set_kernel_stack(struct intr_frame *f){
 	
-}
+// }
 
 struct file* return_file(int fd) {
 	struct thread *t = thread_current();
@@ -117,7 +118,7 @@ sys_remove (const char *file) {
 }
 
 int
-fine_next_fd(struct thread *t) {
+find_next_fd(struct thread *t) {
 
 	int cur_fd = t->next_fd;
 	while(cur_fd < 64)
@@ -145,7 +146,7 @@ sys_open (const char *file) {
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = file;
 
-	if(fine_next_fd(t) == -1) {
+	if(find_next_fd(t) == -1) {
 		printf("파일 디스크립터 다 참^^");
 		//thread_exit(0);
 	}

@@ -188,6 +188,7 @@ pdpe_destroy (uint64_t *pdpe) {
 /* Destroys pml4e, freeing all the pages it references. */
 void
 pml4_destroy (uint64_t *pml4) {
+	printf("pml4_destroy : %p\n", pml4);
 	if (pml4 == NULL)
 		return;
 	ASSERT (pml4 != base_pml4);

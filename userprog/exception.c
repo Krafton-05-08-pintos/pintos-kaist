@@ -5,6 +5,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "intrinsic.h"
+#include "user/syscall.h"
 
 /* Number of page faults processed. */
 static long long page_fault_cnt;
@@ -141,7 +142,7 @@ page_fault (struct intr_frame *f) {
 	user = (f->error_code & PF_U) != 0;
 
 	/* 커널 주소인지 검사하고 페이지 폴트가 발생할 수 있음 발생하면 exit(-1) */
-	exit(-1);
+	sys_exit(-1);
 
 
 #ifdef VM
