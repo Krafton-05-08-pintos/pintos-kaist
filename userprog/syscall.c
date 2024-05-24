@@ -77,12 +77,13 @@ syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
 
 	uint64_t number = f->R.rax;
-	
+	printf("system call number : %d", number);
+	printf("SYS_HALT : %d", SYS_HALT);
 
 	switch(number){
 		case SYS_HALT:
 			sys_halt();
-			set_kernel_stack(f);
+			// set_kernel_stack(f);
 			break;
 		// case SYS_EXIT:
 		// 	sys_exit();
