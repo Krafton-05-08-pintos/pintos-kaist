@@ -21,7 +21,8 @@
         "atomic": "c",
         "*.tcc": "c",
         "fstream": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "syscall.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
