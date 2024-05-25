@@ -147,15 +147,17 @@ sys_open (const char *file) {
 
 	struct thread* t = thread_current();
 	struct file *open_file = filesys_open(file);
+
+	/* 찾는데 실패하면 NULL 반환받음 -> return -1 */
 	if (open_file == NULL) return -1;
+
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = open_file;
-
 	if(find_next_fd(t) == -1) {
 		printf("파일 디스크립터 다 참^^");
 		//thread_exit(0);
 	}
-
+	// printf("open fd : %d \n", cur_fd);
 	return cur_fd;
 }
 
@@ -170,7 +172,7 @@ sys_read (int fd, void *buffer, unsigned size) {
 	if (!validation(buffer))
     {
         printf("is not valid\n");
-        sys_exit(-1);
+        thread_exit();
     }
 	
 	int byte_size = 0;
@@ -219,6 +221,7 @@ void
 sys_close (int fd) {
 	file_close(return_file(fd));	
 	struct thread *t = thread_current();
+	t->fdt[fd] = NULL;
 	if(fd < t->next_fd)
 		t->next_fd = fd;
 }
