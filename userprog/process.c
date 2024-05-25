@@ -235,8 +235,8 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	// while (child_tid);
-	int j=1;
-	for(int i=0; i<j; i++){
+	int16_t j=1;
+	for(int16_t i=0; i<j; i++){
 		j++;
 	}
 	return -1;

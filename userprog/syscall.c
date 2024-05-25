@@ -42,12 +42,18 @@ syscall_init (void) {
 
 bool validation(uint64_t *ptr){
 	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
-	printf("-----------validation start %p-----------\n", ptr);
+	//printf("-----------validation start %p-----------\n", ptr);
 	struct thread *t = thread_current();
-	if(ptr == NULL || is_user_pte(t->pml4)){
+	if(ptr == NULL) return false;
+
+	if(is_kern_pte(t->pml4)){
 		pml4_destroy(t->pml4);
 		return false;
 	}
+	// if(ptr == NULL || is_kernel_vaddr(ptr)){
+	// 	pml4_destroy(t->pml4);
+	// 	return false;
+	// }
 	return true;
 }
 
@@ -62,7 +68,7 @@ struct file* return_file(int fd) {
 
 
 void sys_halt(){
-	printf("--------start sys_halt--------\n");
+	//printf("--------start sys_halt--------\n");
 	power_off();
 }
 
@@ -88,7 +94,7 @@ pid_t
 sys_fork (const char *thread_name) {
 	if (!validation(thread_name))
     {
-        printf("is not valid\n");
+       // printf("is not valid\n");
         sys_exit(-1);
 	}
 }
@@ -110,7 +116,7 @@ bool
 sys_remove (const char *file) {
 	if (!validation(file))
     {
-        printf("is not valid\n");
+       // printf("is not valid\n");
         sys_exit(-1);
     }
 
@@ -138,7 +144,7 @@ int
 sys_open (const char *file) {
 	if (!validation(file))
     {
-        printf("is not valid\n");
+        //printf("is not valid\n");
         sys_exit(-1);
     }
 
@@ -195,6 +201,7 @@ sys_write (int fd, const void *buffer, unsigned size) {
 		byte_size = file_write(return_file(fd), buffer,size);
 	}
 	return byte_size;
+	
 }
 
 void
@@ -239,10 +246,10 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			// set_kernel_stack(f);
 			return;
 
-		// case SYS_EXIT:
-		// 	sys_exit(0);
-		// 	set_kernel_stack(f);
-		// 	break;
+		case SYS_EXIT:
+			sys_exit(f->R.rdi);
+			//set_kernel_stack(f);
+			return;
 
 		// case SYS_FORK:
 		// 	set_kernel_stack(f);
@@ -296,13 +303,11 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 		case SYS_WRITE:
             f->R.rax = sys_write(f->R.rdi,f->R.rsi,f->R.rdx);
-			break;
+			return;
 
 
 		case SYS_SEEK:
-
 			sys_seek(f->R.rdi, f->R.rsi);
-
 			return;
 
 

@@ -39,6 +39,7 @@ struct intr_frame {
 	   These are the interrupted task's saved registers. */
 	struct gp_registers R;
 	uint16_t es;
+	
 	uint16_t __pad1;
 	uint32_t __pad2;
 	uint16_t ds;
