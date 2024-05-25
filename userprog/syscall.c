@@ -43,10 +43,13 @@ syscall_init (void) {
 bool validation(uint64_t *ptr){
 	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
 	//printf("-----------validation start %p-----------\n", ptr);
-	struct thread *t = thread_current();
+	
+	/* 포인터가 NULL 이면 반환 */
 	if(ptr == NULL) return false;
-
-	if(is_kern_pte(t->pml4)){
+	/* 포인터가 커널 영역을 가리키면 false*/
+	struct thread *t = thread_current();
+  
+  if(is_kern_pte(t->pml4)){
 		return false;
 	}
 	// if(ptr == NULL || is_kernel_vaddr(ptr)){
@@ -146,6 +149,7 @@ sys_open (const char *file) {
         sys_exit(-1);
     }
 
+	struct file *open_file = filesys_open(file);
 	struct thread* t = thread_current();
 	struct file *open_file = filesys_open(file);
 	if (open_file == NULL) return -1;
@@ -244,12 +248,12 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		case SYS_HALT:
 			sys_halt();
 			// set_kernel_stack(f);
-			return;
+			break;
 
 		case SYS_EXIT:
 			sys_exit(f->R.rdi);
 			//set_kernel_stack(f);
-			return;
+			break;
 
 		// case SYS_FORK:
 		// 	set_kernel_stack(f);
