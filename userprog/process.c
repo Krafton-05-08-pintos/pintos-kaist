@@ -235,9 +235,7 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	// while (child_tid);
-	int16_t j=1;
-	for(int16_t i=0; i<j; i++){
-		j++;
+	for(int i=0; i<500000000; i++){
 	}
 	return -1;
 }
@@ -252,6 +250,7 @@ process_exit (void) {
 	 * TODO: We recommend you to implement process resource cleanup here. */
 	
 	process_cleanup ();
+	
 }
 
 /* Free the current process's resources. */
