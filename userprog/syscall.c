@@ -46,10 +46,10 @@ bool validation(uint64_t *ptr){
 	
 	/* 포인터가 NULL 이면 반환 */
 	if(ptr == NULL) return false;
-
 	/* 포인터가 커널 영역을 가리키면 false*/
 	struct thread *t = thread_current();
-	if(!is_user_pte(t->pml4)){
+  
+  if(is_kern_pte(t->pml4)){
 		return false;
 	}
 	// if(ptr == NULL || is_kernel_vaddr(ptr)){
@@ -76,9 +76,8 @@ void sys_halt(){
 
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
-
+	// sema_up
 	printf("%s: exit(%d)\n", cur_t->name, status);
-	// sema_up();
 	thread_exit();
 	return;
 }
@@ -152,6 +151,8 @@ sys_open (const char *file) {
 
 	struct file *open_file = filesys_open(file);
 	struct thread* t = thread_current();
+	struct file *open_file = filesys_open(file);
+	if (open_file == NULL) return -1;
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = open_file;
 
