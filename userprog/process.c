@@ -251,6 +251,7 @@ process_exit (void) {
 	 * TODO: We recommend you to implement process resource cleanup here. */
 	
 	process_cleanup ();
+	
 }
 
 /* Free the current process's resources. */
