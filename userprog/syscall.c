@@ -147,10 +147,12 @@ sys_open (const char *file) {
 
 	struct thread* t = thread_current();
 	struct file *open_file = filesys_open(file);
+
+	/* 찾는데 실패하면 NULL 반환받음 -> return -1 */
 	if (open_file == NULL) return -1;
+
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = open_file;
-
 	if(find_next_fd(t) == -1) {
 		printf("파일 디스크립터 다 참^^");
 		//thread_exit(0);
