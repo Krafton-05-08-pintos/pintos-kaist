@@ -63,8 +63,8 @@ initd (void *f_name) {
 #ifdef VM
 	supplemental_page_table_init (&thread_current ()->spt);
 #endif
-	printf("f_name in initd %s *****************\n", f_name);
-	printf("f_name in initd %s *****************\n", f_name);
+	//printf("f_name in initd %s *****************\n", f_name);
+	//printf("f_name in initd %s *****************\n", f_name);
 	process_init ();
 
 	if (process_exec (f_name) < 0)
@@ -174,16 +174,16 @@ process_exec (void *f_name) {
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
 
-	printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+	//printf("파싱 전 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 	char *token, *save_ptr;
 	char *argv[128];
 	int i = 0;
 	for (token = strtok_r (file_name, " ", &save_ptr); token != NULL;
 								token = strtok_r (NULL, " ", &save_ptr)){
    		argv[i++] = token;
-		printf("argv[%d] : %s\n", i-1, argv[i-1]);
+		//printf("argv[%d] : %s\n", i-1, argv[i-1]);
 	}
-	printf("파싱 후 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
+	//printf("파싱 후 file name is [%s] !@!@!@!@!@!@!@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n", file_name);
 
 	/* We first kill the current context */
 	process_cleanup ();
@@ -193,23 +193,23 @@ process_exec (void *f_name) {
 	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
 	argument_stack(&argv, i, &_if);
-	printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
-	printf("LOADER_KERN_BASE : %p\n", LOADER_KERN_BASE);
-	printf("rsp hex :%x\n", _if.rsp);
-	printf("rsp의 dec :%lld\n", _if.rsp);
-	printf("rsp의 주소 :%p\n\n", &(_if.rsp));
+	// printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
+	// printf("LOADER_KERN_BASE : %p\n", LOADER_KERN_BASE);
+	// printf("rsp hex :%x\n", _if.rsp);
+	// printf("rsp의 dec :%lld\n", _if.rsp);
+	// printf("rsp의 주소 :%p\n\n", &(_if.rsp));
 
-	printf("rsi = %p\n", _if.R.rsi);
-	printf("rdi = %d\n\n", _if.R.rdi);
+	//printf("rsi = %p\n", _if.R.rsi);
+	//printf("rdi = %d\n\n", _if.R.rdi);
 
-	printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
-	hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
+	//printf(" USER_STACK - _if.rsp (유저 스택 크기): %d\n",  USER_STACK - _if.rsp);
+	//hex_dump(_if.rsp, _if.rsp, USER_STACK-_if.rsp, true);
 
 
 	/* If load failed, quit. */
 	if (!success)
 	{
-		printf("load fail quit----[%s]------------\n",file_name);
+		//printf("load fail quit----[%s]------------\n",file_name);
 		palloc_free_page (file_name);
 		return -1;
 	}
@@ -235,8 +235,8 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	// while (child_tid);
-	int j=1;
-	for(int i=0; i<j; i++){
+	int16_t j=1;
+	for(int16_t i=0; i<j; i++){
 		j++;
 	}
 	return -1;
@@ -609,19 +609,19 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	int sum = 0;
 	uintptr_t stack_address[128];
 
-	printf("start rsp : %p\n", (if_->rsp));
-	printf("start rsp : %d\n", (if_->rsp));
-	printf("start rsp 값 : %x\n", if_->rsp);
+	// printf("start rsp : %p\n", (if_->rsp));
+	// printf("start rsp : %d\n", (if_->rsp));
+	// printf("start rsp 값 : %x\n", if_->rsp);
 	for(int i=count-1; i>=0; i--){
 		int l = strlen(parse[i])+1;
 		if_->rsp -= l;
 		sum += l;
 		stack_address[i] = if_->rsp;
 		strlcpy(if_->rsp, parse[i], l);
-		printf("l : %d\n", l);
+		//printf("l : %d\n", l);
 		// printf("rsp : %s\n", if_->rsp);
-		printf("rsp 값: %p\n", (if_->rsp));
-		printf("rsp 에 저장된 내용 : %p\n", stack_address[i]);
+		//printf("rsp 값: %p\n", (if_->rsp));
+		//printf("rsp 에 저장된 내용 : %p\n", stack_address[i]);
 	}
 
 	/* 패딩 추가 */
@@ -632,7 +632,7 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	}
 	if_->rsp -= 8;
 	memset(if_->rsp,0, 8);
-	printf("패딩 추가 후 rsp 값: %p\n", (if_->rsp));
+	//printf("패딩 추가 후 rsp 값: %p\n", (if_->rsp));
 
 	/* 인자의 주소 */
 	for(int i=count-1; i>=0; i--){
@@ -640,9 +640,9 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 		// strlcpy(if_->rsp, stack_address[i], 8);
 		memcpy(if_->rsp, &stack_address[i], 7);
 		// strlcpy(if_->rsp, stack_address[i], 8);
-		printf(" [%d]rsp : %p\n", i, if_->rsp);
-		printf(" stack_address 크기 : %d", sizeof(stack_address[i])-1);
-		printf(" rsp 안에 들어있는 값 : %p\n", stack_address[i]);
+		//printf(" [%d]rsp : %p\n", i, if_->rsp);
+		//printf(" stack_address 크기 : %d", sizeof(stack_address[i])-1);
+		//printf(" rsp 안에 들어있는 값 : %p\n", stack_address[i]);
 	}
 
 	/* argv */
@@ -650,19 +650,19 @@ void argument_stack(char **parse, int64_t count, struct intr_frame *if_){
 	// if_->rsp -= 8;
 	// memcpy(if_->rsp, tmp, 7);
 	if_->R.rsi = if_->rsp;
-	printf("rsi = %p\n", if_->R.rsi);
+	//printf("rsi = %p\n", if_->R.rsi);
 
 	/* argc */
 	// if_->rsp -= sizeof(int64_t);
 	// memcpy(if_->rsp, &count, sizeof(int64_t)-1);
 	if_->R.rdi = count;
-	printf("rdi = %d\n", if_->R.rdi);
+	//printf("rdi = %d\n", if_->R.rdi);
 
 	/* return_address */
 	if_->rsp -= 8;
 	memset(if_->rsp,0, 8);
 
-	printf("마지막 rsp : %p\n", if_->rsp);
+	//printf("마지막 rsp : %p\n", if_->rsp);
 }
 
 #else
