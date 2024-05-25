@@ -571,12 +571,14 @@ init_thread(struct thread *t, const char *name, int priority)
 	t->nice = 0;
 	t->recent_cpu = 0;
 
-	t->fdt[0] = 1;
-	t->fdt[1] = 2;
-	t->fdt[2] = 3;
-	t->next_fd = 3;
-
-	/* 전체 리스트에 삽입 */
+	// 표준 입출력/오류 더미 포인터 (수정 필요)
+	int dumy = 0;
+	
+	t->fdt[0] = &dumy;
+	t->fdt[1] = &dumy;
+	t->next_fd = 2;
+  
+		/* 전체 리스트에 삽입 */
 	if(*name != "idle")
 		list_push_back(&thread_assemble, &(t->assemble_elem));
 }
