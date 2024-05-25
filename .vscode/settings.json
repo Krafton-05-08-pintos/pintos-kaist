@@ -25,7 +25,13 @@
         "syscall.h": "c",
         "types.h": "c",
         "main.h": "c",
-        "lib.h": "c"
+        "lib.h": "c",
+        "console.h": "c",
+        "malloc.h": "c",
+        "synch.h": "c",
+        "vaddr.h": "c",
+        "palloc.h": "c",
+        "off_t.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

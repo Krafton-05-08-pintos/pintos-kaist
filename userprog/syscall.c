@@ -47,7 +47,6 @@ bool validation(uint64_t *ptr){
 	if(ptr == NULL) return false;
 
 	if(is_kern_pte(t->pml4)){
-		pml4_destroy(t->pml4);
 		return false;
 	}
 	// if(ptr == NULL || is_kernel_vaddr(ptr)){
@@ -74,9 +73,8 @@ void sys_halt(){
 
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
-
+	// sema_up
 	printf("%s: exit(%d)\n", cur_t->name, status);
-	// sema_up();
 	thread_exit();
 	return;
 }
@@ -149,8 +147,10 @@ sys_open (const char *file) {
     }
 
 	struct thread* t = thread_current();
+	struct file *open_file = filesys_open(file);
+	if (open_file == NULL) return -1;
 	int cur_fd = t->next_fd;
-	t->fdt[cur_fd] = file;
+	t->fdt[cur_fd] = open_file;
 
 	if(find_next_fd(t) == -1) {
 		printf("파일 디스크립터 다 참^^");
