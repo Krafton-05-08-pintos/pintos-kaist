@@ -8,6 +8,7 @@
 #include "threads/flags.h"
 #include "intrinsic.h"
 #include "user/syscall.h"
+#include "filesys/filesys.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -219,7 +220,8 @@ sys_tell (int fd) {
 
 void
 sys_close (int fd) {
-	file_close(return_file(fd));	
+	struct file *close_file = return_file(fd);
+	file_close(close_file);	
 	struct thread *t = thread_current();
 	t->fdt[fd] = NULL;
 	if(fd < t->next_fd)
@@ -319,7 +321,6 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 
 		case SYS_CLOSE:
-
             sys_close(f->R.rdi);
 			return;
 
