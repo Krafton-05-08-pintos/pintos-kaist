@@ -176,9 +176,11 @@ sys_read (int fd, void *buffer, unsigned size) {
         thread_exit();
     }
 	
-	int byte_size = 0;
-	if(fd == 0) 
+	int byte_size = -1;
+	if(fd == 0){
+
 		input_getc();
+	}
 	else 
 		byte_size = file_read(return_file(fd),buffer,size);
 	
@@ -224,7 +226,7 @@ void
 sys_close (int fd) {
 	struct thread *t = thread_current();
 	t->fdt[fd] = NULL;
-	// file_close(return_file(fd));
+	file_close(return_file(fd));
 	if(fd < t->next_fd)
 		t->next_fd = fd;
 }
