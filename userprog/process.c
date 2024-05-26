@@ -248,9 +248,8 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
+	file_allow_write(curr->source);
 	process_cleanup ();
-	
 }
 
 /* Free the current process's resources. */
@@ -371,6 +370,10 @@ load (const char *file_name, struct intr_frame *if_) {
 
 	/* Open executable file. */
 	file = filesys_open (file_name);
+	/* 실행파일 수정 불가능 설정 */
+	file_deny_write(file);
+	/* 생성한 스레드에 소스를 실행파일로 설정 */
+	thread_current()->source = file;
 	if (file == NULL) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;

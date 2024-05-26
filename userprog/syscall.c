@@ -191,8 +191,6 @@ sys_read (int fd, void *buffer, unsigned size) {
 	}
 	else 
 		byte_size = file_read(return_file(fd),buffer,size);
-	
-	/* TODO: 실패시, -1 반환 구현 예정 */	
 
 	return byte_size;
 }

@@ -130,6 +130,7 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 	struct file* fdt[64];               /* file descriptor table 추가 */
 	int next_fd;                        /* 가용한 다음 fd */
+	struct file* source;				/* 프로세스 실행에 사용한 실행파일 */
 };
 
 /* If false (default), use round-robin scheduler.
