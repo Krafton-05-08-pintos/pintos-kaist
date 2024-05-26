@@ -9,6 +9,9 @@
 #include "intrinsic.h"
 #include "user/syscall.h"
 #include "filesys/filesys.h"
+#include "lib/kernel/console.h"
+#include "devices/input.h"
+#include "string.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -43,9 +46,10 @@ syscall_init (void) {
 
 bool validation(uint64_t *ptr){
 	/* ptr이 커널 영역인지 확인 (커널영역에 접근하면 안됨) */
-	//printf("-----------validation start %p-----------\n", ptr);
+	
+	// NULL 이거나 커널 영역을 가리키는 포인터면 flase
 	struct thread *t = thread_current();
-	if(ptr == NULL) return false;
+	if(ptr == NULL || is_kernel_vaddr(ptr)) return false;
 
 	if(is_kern_pte(t->pml4)){
 		return false;
@@ -172,13 +176,19 @@ int
 sys_read (int fd, void *buffer, unsigned size) {
 	if (!validation(buffer))
     {
-        printf("is not valid\n");
+        // printf("is not valid\n");
         thread_exit();
     }
 	
-	int byte_size = 0;
-	if(fd == 0) 
+	int byte_size = -1;
+	if(fd == 0){
 		input_getc();
+		byte_size = size;
+	}
+	/* 표준 출력 디스크립터를 읽으려고 시도 */
+	else if(fd == 1){
+		sys_exit(-1);
+	}
 	else 
 		byte_size = file_read(return_file(fd),buffer,size);
 	
@@ -191,14 +201,20 @@ int
 sys_write (int fd, const void *buffer, unsigned size) {
 	if (!validation(buffer))
     {
-        printf("is not valid\n");
+        // printf("is not valid\n");
         sys_exit(-1);
     }
 
-	int byte_size = 0;
+	int byte_size = -1;
 	/* 표준 출력 */
-	if(fd == 1)
+	if(fd == 1){
     	putbuf(buffer,size);
+		byte_size = (size > strlen(buffer)) ? strlen(buffer) : size;
+	}
+	/* 표준 입력 디스크립터에 쓰려고 시도 */
+	else if(fd == 0){
+		sys_exit(-1);
+	}
 	else{
 		byte_size = file_write(return_file(fd), buffer,size);
 	}
@@ -224,6 +240,7 @@ sys_close (int fd) {
 	file_close(close_file);	
 	struct thread *t = thread_current();
 	t->fdt[fd] = NULL;
+	file_close(return_file(fd));
 	if(fd < t->next_fd)
 		t->next_fd = fd;
 }
@@ -265,10 +282,6 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		// 		printf("is not valid\n");
 		// 		sys_exit(0);
 		// 	}
-
-		// 	set_kernel_stack(f);
-		// 	sys_exec();
-		// 	break;
 
 		// case SYS_WAIT:
 		// 	sys_wait();
@@ -328,6 +341,6 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			break;
 	}
 
-	printf ("system call!\n");
+	// printf ("system call!\n");
 	thread_exit ();
 }
