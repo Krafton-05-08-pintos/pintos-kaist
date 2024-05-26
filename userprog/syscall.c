@@ -14,6 +14,8 @@
 #include "string.h"
 #include "threads/synch.h"
 #include "filesys/file.h"
+#include "userprog/process.h"
+#include "threads/palloc.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -87,7 +89,10 @@ void sys_exit(int status) {
 
 
 int sys_exec (const char *cmd_line){
-	int result = process_exec (cmd_line);
+	char *fn_copy = palloc_get_page(PAL_ZERO);
+	int size = strlen(cmd_line) + 1;
+	strlcpy(fn_copy, cmd_line, size);
+	int result = process_exec (fn_copy);
 	if (result = -1){
 		return -1;
 	}
@@ -98,9 +103,14 @@ pid_t
 sys_fork (const char *thread_name) {
 	if (!validation(thread_name))
     {
-       // printf("is not valid\n");
         sys_exit(-1);
 	}
+	struct thread *cur_t = thread_current();
+	tid_t child = process_fork(thread_name, &(cur_t->tf));
+	cur_t->children[cur_t->next_child] = child;
+	find_next_child(cur_t);
+
+	return child;
 }
 
 
@@ -138,6 +148,22 @@ find_next_fd(struct thread *t) {
 			return 1;
 		}
 		cur_fd++;
+	}
+
+	return -1;
+}
+
+int
+find_next_child(struct thread *t) {
+
+	int cur_child = t->next_child;
+	while(cur_child < 64)
+	{
+		if(t->fdt[cur_child] == NULL) {
+			t->next_child = cur_child;
+			return 1;
+		}
+		cur_child++;
 	}
 
 	return -1;
@@ -284,16 +310,18 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			//set_kernel_stack(f);
 			return;
 
-		// case SYS_FORK:
-		// 	set_kernel_stack(f);
-		// 	sys_fork();
-		// 	break;
+		case SYS_FORK:
+			// set_kernel_stack(f);
+			sys_fork(f->R.rdi);
+			return;
 
-		// case SYS_EXEC:
-		// 	if(!validation(f->R.rdi)){
-		// 		printf("is not valid\n");
-		// 		sys_exit(0);
-		// 	}
+		case SYS_EXEC:
+			if(!validation(f->R.rdi)){
+				printf("is not valid\n");
+				sys_exit(0);
+			}
+			sys_exec(f->R.rdi);
+			return;
 
 		// case SYS_WAIT:
 		// 	sys_wait();
