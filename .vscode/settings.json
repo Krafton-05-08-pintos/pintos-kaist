@@ -31,7 +31,13 @@
         "synch.h": "c",
         "vaddr.h": "c",
         "palloc.h": "c",
-        "off_t.h": "c"
+        "off_t.h": "c",
+        "unistd.h": "c",
+        "loader.h": "c",
+        "syscall-nr.h": "c",
+        "inode.h": "c",
+        "file.h": "c",
+        "filesys.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

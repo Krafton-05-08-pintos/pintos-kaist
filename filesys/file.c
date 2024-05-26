@@ -51,6 +51,12 @@ file_duplicate (struct file *file) {
 /* Closes FILE. */
 void
 file_close (struct file *file) {
+	// printf("왜안돼\n");
+	// printf("file address is: %p\n", file);
+	// printf("close file i_node = %p\n", file->inode);
+	// printf("close file pos = %d\n", file->pos);
+	// printf("close file deny_write = %d\n", file->deny_write);
+	// printf("야발 ^^ \n\n\n");
 	if (file != NULL) {
 		file_allow_write (file);
 		inode_close (file->inode);
