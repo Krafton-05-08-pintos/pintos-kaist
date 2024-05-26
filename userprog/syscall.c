@@ -12,6 +12,8 @@
 #include "lib/kernel/console.h"
 #include "devices/input.h"
 #include "string.h"
+#include "threads/synch.h"
+#include "filesys/file.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -189,11 +191,14 @@ sys_read (int fd, void *buffer, unsigned size) {
 	else if(fd == 1){
 		sys_exit(-1);
 	}
-	else 
-		byte_size = file_read(return_file(fd),buffer,size);
-	
-	/* TODO: 실패시, -1 반환 구현 예정 */	
+	else{
+		struct file *read_file = return_file(fd);
 
+		sema_down(&(read_file->completion_wait));
+		byte_size = file_read(read_file,buffer,size);
+		sema_up(&(read_file->completion_wait));
+	}
+	/* TODO: 실패시, -1 반환 구현 예정 */	
 	return byte_size;
 }
 
@@ -216,7 +221,11 @@ sys_write (int fd, const void *buffer, unsigned size) {
 		sys_exit(-1);
 	}
 	else{
-		byte_size = file_write(return_file(fd), buffer,size);
+		struct file *write_file = return_file(fd);
+
+		sema_down(&(write_file->completion_wait));
+		byte_size = file_write(write_file, buffer,size);
+		sema_up(&(write_file->completion_wait));
 	}
 	return byte_size;
 	
@@ -225,7 +234,10 @@ sys_write (int fd, const void *buffer, unsigned size) {
 void
 sys_seek (int fd, unsigned position) {
 	
-	file_seek(return_file(fd),position);
+	struct file *seek_file = return_file(fd);
+	sema_down(&(seek_file->completion_wait));
+	file_seek(seek_file,position);
+	sema_up(&(seek_file->completion_wait));
 }
 
 unsigned

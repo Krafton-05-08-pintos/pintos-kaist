@@ -2,13 +2,7 @@
 #include <debug.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
-
-/* An open file. */
-struct file {
-	struct inode *inode;        /* File's inode. */
-	off_t pos;                  /* Current position. */
-	bool deny_write;            /* Has file_deny_write() been called? */
-};
+#include "threads/synch.h"
 
 /* Opens a file for the given INODE, of which it takes ownership,
  * and returns the new file.  Returns a null pointer if an
@@ -20,6 +14,7 @@ file_open (struct inode *inode) {
 		file->inode = inode;
 		file->pos = 0;
 		file->deny_write = false;
+		sema_init(&(file->completion_wait), 1);
 		return file;
 	} else {
 		inode_close (inode);
