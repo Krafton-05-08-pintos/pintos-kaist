@@ -38,7 +38,11 @@
         "inode.h": "c",
         "file.h": "c",
         "filesys.h": "c",
-        "input.h": "c"
+        "input.h": "c",
+        "mmu.h": "c",
+        "init.h": "c",
+        "vm.h": "c",
+        "inttypes.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

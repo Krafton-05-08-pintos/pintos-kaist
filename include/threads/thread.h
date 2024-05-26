@@ -130,6 +130,10 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 	struct file* fdt[64];               /* file descriptor table 추가 */
 	int next_fd;                        /* 가용한 다음 fd */
+
+	struct thread *parent;
+	tid_t children [64];
+	int next_child;
 };
 
 /* If false (default), use round-robin scheduler.
