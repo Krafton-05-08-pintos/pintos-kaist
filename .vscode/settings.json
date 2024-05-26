@@ -37,7 +37,8 @@
         "syscall-nr.h": "c",
         "inode.h": "c",
         "file.h": "c",
-        "filesys.h": "c"
+        "filesys.h": "c",
+        "input.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
