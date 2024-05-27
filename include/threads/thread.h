@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "threads/interrupt.h"
 #include "threads/fixedpoint.h"
+#include "threads/synch.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -133,8 +134,14 @@ struct thread {
 
 	struct file* source;				/* 프로세스 실행에 사용한 실행파일 */
 	struct thread *parent;
-	tid_t children [64];
+	struct thread *children [64];
 	int next_child;
+
+	tid_t waiting_child;
+
+	struct semaphore exit_sema;
+	struct semaphore load_sema;
+
 };
 
 /* If false (default), use round-robin scheduler.

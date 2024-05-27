@@ -107,7 +107,7 @@ sys_fork (const char *thread_name) {
 	}
 	struct thread *cur_t = thread_current();
 	tid_t child = process_fork(thread_name, &(cur_t->tf));
-	cur_t->children[cur_t->next_child] = child;
+	
 	find_next_child(cur_t);
 
 	return child;
