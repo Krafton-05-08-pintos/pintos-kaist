@@ -33,6 +33,19 @@ process_init (void) {
 	struct thread *current = thread_current ();
 }
 
+struct thread *get_child_process(struct list* list, tid_t child){
+	struct list_elem *ptr = list_head(list);
+	// printf(" print donation list!!!\n");
+	while (ptr->next != list_tail(list))
+	{
+		ptr = ptr->next;
+		struct thread *t = list_entry(ptr, struct thread, child_elem);
+		if(t->tid == child)
+		return t;
+	}
+	return NULL;
+}
+
 /* Starts the first userland program, called "initd", loaded from FILE_NAME.
  * The new thread may be scheduled (and may even exit)
  * before process_create_initd() returns. Returns the initd's
@@ -154,7 +167,6 @@ __do_fork (void *aux) {
 	 * TODO:       the resources of parent.*/
 	current->source =file_duplicate(parent->source);
 	current->parent = parent;
-	parent->children[parent->next_child] = current;
 	process_init ();
 
 	/* Finally, switch to the newly created process. */
@@ -192,7 +204,6 @@ process_exec (void *f_name) {
 
 	/* We first kill the current context */
 	process_cleanup ();
-
 	/* And then load the binary */
 	success = load (file_name, &_if);
 
@@ -226,7 +237,7 @@ process_exec (void *f_name) {
 }
 
 
-/* Waits for thread TID to die end returns its exit status.  If
+/* Waits for thread TID to die and returns its exit status.  If
  * it was terminated by the kernel (i.e. killed due to an
  * exception), returns -1.  If TID is invalid or if it was not a
  * child of the calling process, or if process_wait() has already
@@ -235,29 +246,19 @@ process_exec (void *f_name) {
  *
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
-
 int
 process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-
+	// while (child_tid);
 	struct thread *t = thread_current();
-	t->waiting_child = child_tid;
 
-	printf("current : %p",get_child_process(child_tid) );
-
-	if(get_child_process(child_tid)->parent != NULL && get_child_process(child_tid)->parent == t)
+	if(get_child_process(&t->child_list, child_tid)->parent == t)
 	{
-		printf("current : %p",get_child_process(child_tid) );
 		sema_down(&t->exit_sema);
+		return 0;
 	}
-	else {
-
-		for(int i = 0; i < 1500000000; i++) {}
-	}
-
-	
 	return -1;
 }
 
@@ -265,16 +266,12 @@ process_wait (tid_t child_tid UNUSED) {
 void
 process_exit (void) {
 	struct thread *curr = thread_current ();
-	struct thread *parent_thread = curr->parent;
 	/* TODO: Your code goes here.
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
+	sema_up(&curr->parent->exit_sema);
 	process_cleanup ();
-	if(parent_thread->waiting_child == curr->tid) 
-		sema_up(&parent_thread->exit_sema);
-
 }
 
 /* Free the current process's resources. */
@@ -313,30 +310,6 @@ process_activate (struct thread *next) {
 
 	/* Set thread's kernel stack for use in processing interrupts. */
 	tss_update (next);
-}
-
-/* tid */
-struct thread* get_child_process(tid_t tid)
-{
-	struct thread * t  = thread_current();
-	printf("thread_current!!!!!:%p\n",thread_current());
-	for(int i = 0; i < 64; i++) {
-		if(t->children[i]->tid == tid) return t->children[i];
-	}
-	return NULL;	
-}
-
-void remove_child_process(struct thread *cp)
-{
-	struct thread * t  = thread_current();
-	for(int i = 0; i < 64; i++) {
-		if(t->children[i] == cp) {
-			t->children[i] = NULL;
-			if(i < t->next_child)
-				t->next_child = i;
-		}
-
-	}
 }
 
 /* We load ELF binaries.  The following definitions are taken
