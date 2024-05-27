@@ -152,7 +152,7 @@ __do_fork (void *aux) {
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
-
+	current->source =file_duplicate(parent->source);
 	current->parent = parent;
 	process_init ();
 
@@ -193,6 +193,7 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	success = load (file_name, &_if);
+
 	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
 	// printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
@@ -215,13 +216,7 @@ process_exec (void *f_name) {
 		palloc_free_page (file_name);
 		return -1;
 	}
-<<<<<<< HEAD
 	argument_stack(&argv, i, &_if);
-=======
-
-	argument_stack(&argv, i, &_if);
-
->>>>>>> 3580203ba4a3bb2eaf7760fd60768b1337e76cb1
 	palloc_free_page (file_name);
 	/* Start switched process. */
 	do_iret  	(&_if);
@@ -257,8 +252,9 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	// file_allow_write(curr->source);
+	
 	process_cleanup ();
+	
 }
 
 /* Free the current process's resources. */
@@ -383,11 +379,6 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
-
-	// /* 실행파일 수정 불가능 설정 */
-	// file_deny_write(file);
-	// /* 생성한 스레드에 소스를 실행파일로 설정 */
-	// thread_current()->source = file;
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
