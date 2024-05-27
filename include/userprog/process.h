@@ -10,5 +10,5 @@ int process_wait (tid_t);
 void process_exit (void);
 void process_activate (struct thread *next);
 /* 작성함수 */
-
+struct thread *get_child_process(struct list* list, tid_t child);
 #endif /* userprog/process.h */

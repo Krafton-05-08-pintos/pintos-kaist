@@ -183,7 +183,10 @@ void thread_print_stats(void)
 tid_t thread_create(const char *name, int priority,
 					thread_func *function, void *aux)
 {
+
+	struct thread *parent = thread_current();
 	struct thread *t;
+	// printf("child thread : %p\n", t);
 	tid_t tid;
 	// printf("create thread :: [name] - %s\n", name);
 	// printf("create thread :: [name] - %s\n", aux);
@@ -208,6 +211,11 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.ss = SEL_KDSEG;
 	t->tf.cs = SEL_KCSEG;
 	t->tf.eflags = FLAG_IF;
+
+	list_push_back(&parent->child_list, &t->child_elem);
+	parent->next_child = list_size(&parent->child_list);
+
+	t->parent = parent;
 
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -581,7 +589,12 @@ init_thread(struct thread *t, const char *name, int priority)
 	/* 부모자식 상관관계*/
 	t->parent = NULL;
 	t->next_child = 0;
-		/* 전체 리스트에 삽입 */
+
+	t->waiting_child = NULL;
+	sema_init(&t->exit_sema,0);
+	sema_init(&t->load_sema,0);
+	list_init(&t->child_list);
+	/* 전체 리스트에 삽입 */
 	if(*name != "idle")
 		list_push_back(&thread_assemble, &(t->assemble_elem));
 }

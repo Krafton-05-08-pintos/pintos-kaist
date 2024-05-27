@@ -33,6 +33,19 @@ process_init (void) {
 	struct thread *current = thread_current ();
 }
 
+struct thread *get_child_process(struct list* list, tid_t child){
+	struct list_elem *ptr = list_head(list);
+	// printf(" print donation list!!!\n");
+	while (ptr->next != list_tail(list))
+	{
+		ptr = ptr->next;
+		struct thread *t = list_entry(ptr, struct thread, child_elem);
+		if(t->tid == child)
+		return t;
+	}
+	return NULL;
+}
+
 /* Starts the first userland program, called "initd", loaded from FILE_NAME.
  * The new thread may be scheduled (and may even exit)
  * before process_create_initd() returns. Returns the initd's
@@ -239,7 +252,12 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 	// while (child_tid);
-	for(int i=0; i<1000000000; i++){
+	struct thread *t = thread_current();
+
+	if(get_child_process(&t->child_list, child_tid)->parent == t)
+	{
+		sema_down(&t->exit_sema);
+		return 0;
 	}
 	return -1;
 }
@@ -252,9 +270,8 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
+	sema_up(&curr->parent->exit_sema);
 	process_cleanup ();
-	
 }
 
 /* Free the current process's resources. */

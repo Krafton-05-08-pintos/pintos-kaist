@@ -16,6 +16,7 @@
 #include "filesys/file.h"
 #include "userprog/process.h"
 #include "threads/palloc.h"
+#include "kernel/list.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -81,8 +82,13 @@ void sys_halt(){
 
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
-	// sema_up
+	struct thread *parent_t = cur_t->parent;
+
+	sema_up(&cur_t->parent->exit_sema);
+	list_remove(&cur_t->child_elem);
+	parent_t->next_child = list_size(&parent_t->child_list);
 	printf("%s: exit(%d)\n", cur_t->name, status);
+
 	thread_exit();
 	return;
 }
@@ -107,8 +113,6 @@ sys_fork (const char *thread_name) {
 	}
 	struct thread *cur_t = thread_current();
 	tid_t child = process_fork(thread_name, &(cur_t->tf));
-	cur_t->children[cur_t->next_child] = child;
-	find_next_child(cur_t);
 
 	return child;
 }
@@ -152,23 +156,6 @@ find_next_fd(struct thread *t) {
 
 	return -1;
 }
-
-int
-find_next_child(struct thread *t) {
-
-	int cur_child = t->next_child;
-	while(cur_child < 64)
-	{
-		if(t->fdt[cur_child] == NULL) {
-			t->next_child = cur_child;
-			return 1;
-		}
-		cur_child++;
-	}
-
-	return -1;
-}
-
 
 int
 sys_open (const char *file) {
@@ -326,7 +313,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 		// case SYS_WAIT:
 		// 	sys_wait();
 		// 	set_kernel_stack(f);
-			//break;
+		// 	return;
 		
 		case SYS_CREATE:
 			// char * file_name = ;
