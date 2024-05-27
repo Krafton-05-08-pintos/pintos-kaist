@@ -93,21 +93,24 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	bool writable;
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
-
+	if(is_kern_pte(pte)) return false;
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page (parent->pml4, va);
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
-
+	newpage = pml4_create();
+	
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
-
+	writable = is_writable(pte);
+	memcpy (newpage, parent_page, PGSIZE);
 	/* 5. Add new page to child's page table at address VA with WRITABLE
 	 *    permission. */
 	if (!pml4_set_page (current->pml4, va, newpage, writable)) {
 		/* 6. TODO: if fail to insert page, do error handling. */
+		return false;
 	}
 	return true;
 }
@@ -149,7 +152,7 @@ __do_fork (void *aux) {
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
-
+	current->source =file_duplicate(parent->source);
 	current->parent = parent;
 	process_init ();
 
@@ -190,6 +193,7 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	success = load (file_name, &_if);
+
 	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
 	// printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
@@ -212,9 +216,7 @@ process_exec (void *f_name) {
 		palloc_free_page (file_name);
 		return -1;
 	}
-
 	argument_stack(&argv, i, &_if);
-
 	palloc_free_page (file_name);
 	/* Start switched process. */
 	do_iret  	(&_if);
@@ -250,8 +252,9 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	// file_allow_write(curr->source);
+	
 	process_cleanup ();
+	
 }
 
 /* Free the current process's resources. */
@@ -376,11 +379,6 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
-
-	// /* 실행파일 수정 불가능 설정 */
-	// file_deny_write(file);
-	// /* 생성한 스레드에 소스를 실행파일로 설정 */
-	// thread_current()->source = file;
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr

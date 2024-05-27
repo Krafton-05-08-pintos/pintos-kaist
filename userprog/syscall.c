@@ -312,7 +312,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 		case SYS_FORK:
 			// set_kernel_stack(f);
-			sys_fork(f->R.rdi);
+			f->R.rax = sys_fork(f->R.rdi);
 			return;
 
 		case SYS_EXEC:
