@@ -52,6 +52,12 @@ process_create_initd (const char *file_name) {
 	file_name = strtok_r (NULL, " ", &file_name);
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
+	struct thread* t = thread_current();
+	t->waiting_child = tid;
+	t->children[t->next_child]->tid = tid;
+	printf("t-> next_child: %d\n",t->next_child);
+	// if(get_child_process(tid)!= NULL)
+	// 	get_child_process(tid)->parent = t;
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	return tid;
@@ -243,18 +249,14 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       implementing the process_wait. */
 
 	struct thread *t = thread_current();
-	t->waiting_child = child_tid;
-
-	printf("current : %p",get_child_process(child_tid) );
-
-	if(get_child_process(child_tid)->parent != NULL && get_child_process(child_tid)->parent == t)
+	printf("%d@@@@@@@@@@@@\n",t->waiting_child);
+	//printf("current : %p",get_child_process(child_tid) );
+	if(t->waiting_child == child_tid)
 	{
+		//printf("%d@@@@@@@@@@@@\n",t->waiting_child);
 		printf("current : %p",get_child_process(child_tid) );
-		sema_down(&t->exit_sema);
-	}
-	else {
-
-		for(int i = 0; i < 1500000000; i++) {}
+		//sema_down(&t->exit_sema);
+		//for(int i = 0; i < 1500000000; i++) {}
 	}
 
 	
@@ -270,11 +272,10 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
-	process_cleanup ();
+
 	if(parent_thread->waiting_child == curr->tid) 
 		sema_up(&parent_thread->exit_sema);
-
+	process_cleanup ();
 }
 
 /* Free the current process's resources. */
@@ -319,9 +320,15 @@ process_activate (struct thread *next) {
 struct thread* get_child_process(tid_t tid)
 {
 	struct thread * t  = thread_current();
-	printf("thread_current!!!!!:%p\n",thread_current());
+	//printf("thread_current!!!!!:%p\n",thread_current());
+	
 	for(int i = 0; i < 64; i++) {
-		if(t->children[i]->tid == tid) return t->children[i];
+		if(t->children[i] == NULL) continue;
+		printf("child index1:%d %d\n",t->children[i]->tid, tid);
+		if(t->children[i]->tid == tid) {
+			printf("child index2:%d\n",i);
+			return t->children[i];
+		}
 	}
 	return NULL;	
 }
