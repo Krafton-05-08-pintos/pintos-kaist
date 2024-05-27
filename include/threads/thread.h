@@ -131,6 +131,7 @@ struct thread {
 	struct file* fdt[64];               /* file descriptor table 추가 */
 	int next_fd;                        /* 가용한 다음 fd */
 
+	struct file* source;				/* 프로세스 실행에 사용한 실행파일 */
 	struct thread *parent;
 	tid_t children [64];
 	int next_child;

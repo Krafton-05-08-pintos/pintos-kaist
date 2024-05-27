@@ -190,10 +190,8 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	success = load (file_name, &_if);
-
 	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
-	argument_stack(&argv, i, &_if);
 	// printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
 	// printf("LOADER_KERN_BASE : %p\n", LOADER_KERN_BASE);
 	// printf("rsp hex :%x\n", _if.rsp);
@@ -214,6 +212,9 @@ process_exec (void *f_name) {
 		palloc_free_page (file_name);
 		return -1;
 	}
+
+	argument_stack(&argv, i, &_if);
+
 	palloc_free_page (file_name);
 	/* Start switched process. */
 	do_iret  	(&_if);
@@ -249,9 +250,8 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	
+	// file_allow_write(curr->source);
 	process_cleanup ();
-	
 }
 
 /* Free the current process's resources. */
@@ -376,6 +376,11 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
+
+	// /* 실행파일 수정 불가능 설정 */
+	// file_deny_write(file);
+	// /* 생성한 스레드에 소스를 실행파일로 설정 */
+	// thread_current()->source = file;
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
