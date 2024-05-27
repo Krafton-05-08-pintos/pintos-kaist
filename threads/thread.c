@@ -120,6 +120,7 @@ void thread_init(void)
 	init_thread(initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid();
+
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -216,7 +217,7 @@ tid_t thread_create(const char *name, int priority,
 	parent->next_child = list_size(&parent->child_list);
 
 	t->parent = parent;
-
+  
 	/* Add to run queue. */
 	thread_unblock(t);
 	if(!thread_mlfqs){
@@ -594,6 +595,7 @@ init_thread(struct thread *t, const char *name, int priority)
 	sema_init(&t->exit_sema,0);
 	sema_init(&t->load_sema,0);
 	list_init(&t->child_list);
+
 	/* 전체 리스트에 삽입 */
 	if(*name != "idle")
 		list_push_back(&thread_assemble, &(t->assemble_elem));

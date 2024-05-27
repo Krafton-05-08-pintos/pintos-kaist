@@ -134,6 +134,7 @@ struct thread {
 
 	struct file* source;				/* 프로세스 실행에 사용한 실행파일 */
 	struct thread *parent;
+  
 	struct list child_list;
 	struct list_elem child_elem;
 	int next_child;
