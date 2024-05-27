@@ -93,21 +93,24 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	bool writable;
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
-
+	if(is_kern_pte(pte)) return false;
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page (parent->pml4, va);
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
-
+	newpage = pml4_create();
+	
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
-
+	writable = is_writable(pte);
+	memcpy (newpage, parent_page, PGSIZE);
 	/* 5. Add new page to child's page table at address VA with WRITABLE
 	 *    permission. */
 	if (!pml4_set_page (current->pml4, va, newpage, writable)) {
 		/* 6. TODO: if fail to insert page, do error handling. */
+		return false;
 	}
 	return true;
 }
@@ -193,7 +196,6 @@ process_exec (void *f_name) {
 
 	// printf("argument_stack 전 rsp의 주소 :%p\n", _if.rsp);
 
-	argument_stack(&argv, i, &_if);
 	// printf("LOADER_PHYS_BASE : %p\n", LOADER_PHYS_BASE);
 	// printf("LOADER_KERN_BASE : %p\n", LOADER_KERN_BASE);
 	// printf("rsp hex :%x\n", _if.rsp);
@@ -214,6 +216,7 @@ process_exec (void *f_name) {
 		palloc_free_page (file_name);
 		return -1;
 	}
+	argument_stack(&argv, i, &_if);
 	palloc_free_page (file_name);
 	/* Start switched process. */
 	do_iret  	(&_if);
