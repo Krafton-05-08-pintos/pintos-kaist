@@ -16,6 +16,7 @@
 #include "filesys/file.h"
 #include "userprog/process.h"
 #include "threads/palloc.h"
+#include "kernel/list.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -81,8 +82,13 @@ void sys_halt(){
 
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
-	// sema_up
+	struct thread *parent_t = cur_t->parent;
+
+	list_remove(&cur_t->child_elem);
+	
+	parent_t->next_child = list_size(&parent_t->child_list);
 	printf("%s: exit(%d)\n", cur_t->name, status);
+
 	thread_exit();
 	return;
 }
@@ -107,8 +113,6 @@ sys_fork (const char *thread_name) {
 	}
 	struct thread *cur_t = thread_current();
 	tid_t child = process_fork(thread_name, &(cur_t->tf));
-	
-	find_next_child(cur_t);
 
 	return child;
 }
@@ -152,23 +156,6 @@ find_next_fd(struct thread *t) {
 
 	return -1;
 }
-
-int
-find_next_child(struct thread *t) {
-
-	int cur_child = t->next_child;
-	while(cur_child < 64)
-	{
-		if(t->fdt[cur_child] == NULL) {
-			t->next_child = cur_child;
-			return 1;
-		}
-		cur_child++;
-	}
-
-	return -1;
-}
-
 
 int
 sys_open (const char *file) {
@@ -283,6 +270,12 @@ sys_close (int fd) {
 		t->next_fd = fd;
 }
 
+int
+sys_wait(pid_t pid) {
+	
+	return process_wait(pid);
+}
+
 
 void
 syscall_handler (struct intr_frame *f UNUSED) {
@@ -323,10 +316,10 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			sys_exec(f->R.rdi);
 			return;
 
-		// case SYS_WAIT:
-		// 	sys_wait();
-		// 	set_kernel_stack(f);
-			//break;
+		case SYS_WAIT:
+			f->R.rax = sys_wait(f->R.rdi);
+			// set_kernel_stack(f);
+			return;
 		
 		case SYS_CREATE:
 			// char * file_name = ;

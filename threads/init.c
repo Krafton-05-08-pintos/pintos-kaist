@@ -87,6 +87,7 @@ main (void) {
 	malloc_init ();
 	paging_init (mem_end);
 
+	printf("main thread is : %p\n\n", thread_current());
 #ifdef USERPROG
 	tss_init ();
 	gdt_init ();
