@@ -3,6 +3,7 @@
 #include <syscall.h>
 #include "tests/lib.h"
 #include "tests/main.h"
+#include "threads/thread.h"
 
 void
 test_main (void) 
@@ -10,7 +11,9 @@ test_main (void)
   int pid;
 
   if ((pid = fork("child"))){
+    printf("%d @@@\n",pid);
     int status = wait (pid);
+    printf("%d @@@\n",pid);
     msg ("Parent: child exit status is %d", status);
   } else {
     msg ("child run");

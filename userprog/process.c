@@ -89,9 +89,20 @@ initd (void *f_name) {
  * TID_ERROR if the thread cannot be created. */
 tid_t
 process_fork (const char *name, struct intr_frame *if_ UNUSED) {
+	
 	/* Clone current thread to new thread.*/
+
+	//printf("[process_fork] if_ address: %p, rdi value: %ld\n", (void*)if_, if_->R.rdi);
+
+	struct thread *th_copy = palloc_get_page (0);
+	memcpy (th_copy,thread_current(), sizeof(struct thread));
+	
+	
+	
+
 	return thread_create (name,
-			PRI_DEFAULT, __do_fork, thread_current ());
+			PRI_DEFAULT, __do_fork, th_copy);
+
 }
 
 #ifndef VM
@@ -106,7 +117,8 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	bool writable;
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
-	if(is_kern_pte(pte)) return false;
+	if(is_kern_pte(pte)) return true;
+
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page (parent->pml4, va);
 
@@ -136,14 +148,15 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 static void
 __do_fork (void *aux) {
 	struct intr_frame if_;
-	struct thread *parent = (struct thread *) aux;
+	struct thread *parent = aux;
 	struct thread *current = thread_current ();
+
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if;
+	struct intr_frame *parent_if = &(parent->tf);
 	bool succ = true;
 
 	/* 1. Read the cpu context to local stack. */
-	memcpy (&if_, parent_if, sizeof (struct intr_frame));
+	memcpy (&(current->tf), parent_if, sizeof (struct intr_frame));
 
 	/* 2. Duplicate PT */
 	current->pml4 = pml4_create();
@@ -158,6 +171,7 @@ __do_fork (void *aux) {
 #else
 	if (!pml4_for_each (parent->pml4, duplicate_pte, parent))
 		goto error;
+	else printf("pml4 for each true!\n");
 #endif
 
 	/* TODO: Your code goes here.
@@ -165,14 +179,22 @@ __do_fork (void *aux) {
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
-	current->source =file_duplicate(parent->source);
-	current->parent = parent;
-	process_init ();
+	
+	struct file *f_copy = palloc_get_page (0);
+	memcpy (f_copy,parent->source, sizeof(struct file));
 
+	current->source = file_duplicate(f_copy);
+	//printf("[do_fork]file pos %d\n",current->source->pos);
+	//process_init ();
+
+	//sema_up(&(current->parent->load_sema));
 	/* Finally, switch to the newly created process. */
 	if (succ)
-		do_iret (&if_);
+		//printf("is success??? %d\n",succ);
+		do_iret (&current->tf);
 error:
+	printf("error!\n");
+	//sema_up(&(parent->load_sema));
 	thread_exit ();
 }
 
@@ -254,13 +276,13 @@ process_wait (tid_t child_tid UNUSED) {
 	// while (child_tid);
 	struct thread *t = thread_current();
 
-
 	if(get_child_process(&t->child_list, child_tid)->parent == t)
 	{
 		t->waiting_child = get_child_process(&t->child_list,child_tid);
 		sema_down(&t->exit_sema);
 		return 0;
 	}
+	
 	return -1;
 }
 
@@ -394,6 +416,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if (t->pml4 == NULL)
 		goto done;
 	process_activate (thread_current ());
+	
 
 	/* Open executable file. */
 	file = filesys_open (file_name);
@@ -470,7 +493,9 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;
-	
+
+	thread_current()->source = file;
+
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
 	

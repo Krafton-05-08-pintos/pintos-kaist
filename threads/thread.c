@@ -217,6 +217,8 @@ tid_t thread_create(const char *name, int priority,
 	parent->next_child = list_size(&parent->child_list);
 
 	t->parent = parent;
+	//printf("parent_name: %s\n",t->parent->name);
+	//printf("current_name: %s\n",t->name);
   
 	/* Add to run queue. */
 	thread_unblock(t);
@@ -589,7 +591,7 @@ init_thread(struct thread *t, const char *name, int priority)
   
 	/* 부모자식 상관관계*/
 	t->parent = NULL;
-	t->next_child = 0;
+	//t->next_child = 0;
 
 	t->waiting_child = NULL;
 	sema_init(&t->exit_sema,0);

@@ -84,9 +84,11 @@ void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
 	struct thread *parent_t = cur_t->parent;
 
+	//sema_up(&(parent_t->load_sema));
+
 	list_remove(&cur_t->child_elem);
-	
-	parent_t->next_child = list_size(&parent_t->child_list);
+
+	//parent_t->next_child = list_size(&parent_t->child_list);
 	printf("%s: exit(%d)\n", cur_t->name, status);
 
 	thread_exit();
@@ -95,6 +97,10 @@ void sys_exit(int status) {
 
 
 int sys_exec (const char *cmd_line){
+	if(!validation(cmd_line)){
+		//printf("is not valid\n");
+		sys_exit(0);
+	}
 	char *fn_copy = palloc_get_page(PAL_ZERO);
 	int size = strlen(cmd_line) + 1;
 	strlcpy(fn_copy, cmd_line, size);
@@ -112,7 +118,18 @@ sys_fork (const char *thread_name) {
         sys_exit(-1);
 	}
 	struct thread *cur_t = thread_current();
-	tid_t child = process_fork(thread_name, &(cur_t->tf));
+	
+	tid_t child;
+	child = process_fork(thread_name, &(cur_t->tf));
+
+	//printf("sys_fork[%s]: return %d \n",cur_t->name,child);
+	//printf("current_tid: %s\n",cur_t->name);
+	
+
+	//sema_down(&(cur_t->load_sema));
+
+	printf("after sema_down return %d \n",child);
+	
 
 	return child;
 }
@@ -272,7 +289,7 @@ sys_close (int fd) {
 
 int
 sys_wait(pid_t pid) {
-	
+	printf("current_thread_wait: %s\n",thread_current()->name);
 	return process_wait(pid);
 }
 
@@ -305,14 +322,17 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 		case SYS_FORK:
 			// set_kernel_stack(f);
-			f->R.rax = sys_fork(f->R.rdi);
+			memcpy(&(thread_current()->tf),f,sizeof(thread_current()->tf));
+			// printf("[syscall_handler] thread_current: %s\n", (f->R.rdi));
+			// printf("[syscall_handler] thread_current: %s\n", (thread_current()->tf.R.rdi));
+			//printf("%d sys_fork \n",f->R.rax);
+			f->R.rax = 0;
+			f->R.rax= sys_fork(f->R.rdi);
+			
 			return;
 
 		case SYS_EXEC:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit(0);
-			}
+			
 			sys_exec(f->R.rdi);
 			return;
 
@@ -374,6 +394,5 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			break;
 	}
 
-	// printf ("system call!\n");
 	thread_exit ();
 }
