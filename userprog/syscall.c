@@ -83,8 +83,6 @@ void sys_halt(){
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
 	struct thread *parent_t = cur_t->parent;
-
-	list_remove(&cur_t->child_elem);
 	// parent_t->next_child = list_size(&parent_t->child_list);
 	printf("%s: exit(%d)\n", cur_t->name, status);
 	// printf("parent_t tid : %d\n", parent_t->tid);
@@ -275,7 +273,7 @@ sys_seek (int fd, unsigned position) {
 unsigned
 sys_tell (int fd) {
 
-	file_tell(return_file(fd));
+	return file_tell(return_file(fd));
 }
 
 void

@@ -316,6 +316,7 @@ process_wait (tid_t child_tid UNUSED) {
 	// while (child_tid);
 	struct thread *t = thread_current();
  	struct thread *child = get_child_process(&t->child_list, child_tid);
+	sema_up(&child->parent_wait_sema);
 	// printf("웨이트 child_tid : %d\n", child_tid);
 	if(child->parent == t)
 	{
@@ -332,6 +333,7 @@ process_wait (tid_t child_tid UNUSED) {
 /* Exit the process. This function is called by thread_exit (). */
 void
 process_exit (void) {
+	enum intr_level old_level;
 	struct thread *curr = thread_current ();
 	//printf("thread_name : %s\n",curr->name);
 	//printf("thread_parent_addr : %p\n",curr->parent);
@@ -339,8 +341,12 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	if(curr->parent->waiting_child == curr)
+	sema_down(&curr->parent_wait_sema);
+	old_level = intr_disable ();
+	if(curr->parent->waiting_child == curr){
 		sema_up(&curr->parent->exit_sema);
+	}
+	intr_set_level (old_level);
 	process_cleanup ();
 }
 

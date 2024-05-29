@@ -144,6 +144,7 @@ struct thread {
 	struct thread *waiting_child;
 	struct semaphore exit_sema;
 	struct semaphore load_sema;
+	struct semaphore parent_wait_sema;
 
 	int exit_status;
 };
