@@ -217,6 +217,8 @@ tid_t thread_create(const char *name, int priority,
 	// parent->next_child = list_size(&parent->child_list);
 
 	t->parent = parent;
+	//printf("parent_name: %s\n",t->parent->name);
+	//printf("current_name: %s\n",t->name);
   
 	/* Add to run queue. */
 	thread_unblock(t);

@@ -318,15 +318,10 @@ process_wait (tid_t child_tid UNUSED) {
 	struct thread *t = thread_current();
  	struct thread *child = get_child_process(&t->child_list, child_tid);
 	if(child == NULL) return -1;
-	t->waiting_child = child;
-
 	sema_down(&child->exit_sema);
-	// printf("웨이트 child_tid : %d\n", child_tid);
-		list_remove(&child->child_elem);
-		// printf("프로세스 종료를 기다림 parent-%d wait child - %d\n",t->tid, child->tid);
-		sema_up(&child->parent_wait_sema);
-		// printf("부모 %d의 자식 %d가 종료됨 exit_status : %d\n",t->tid,child_tid, t->exit_status);
-		return t->exit_status;
+	sema_up(&child->parent_wait_sema);
+	list_remove(&child->child_elem);
+	return t->exit_status;
 }
 
 /* Exit the process. This function is called by thread_exit (). */

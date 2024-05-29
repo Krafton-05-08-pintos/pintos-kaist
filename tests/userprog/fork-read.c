@@ -42,11 +42,11 @@ test_main (void)
     if (byte_cnt != sizeof sample - 21)
       fail ("read() returned %d instead of %zu", byte_cnt, sizeof sample - 21);
     else if (strcmp (sample, buffer)) 
-      {
-        msg ("expected text:\n%s", sample);
-        msg ("text actually read:\n%s", buffer);
-        fail ("expected text differs from actual");
-      }
+    {
+      msg ("expected text:\n%s", sample);
+      msg ("text actually read:\n%s", buffer);
+      fail ("expected text differs from actual");
+    }
 
     char magic_sentence[17] = "pintos is funny!";
     memcpy(buffer, magic_sentence, 17);
