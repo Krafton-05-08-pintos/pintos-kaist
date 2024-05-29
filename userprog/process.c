@@ -211,6 +211,7 @@ __do_fork (void *aux) {
 		if(current->parent->fdt[i] == NULL)
 			continue;
 		current->fdt[i] = file_duplicate(current->parent->fdt[i]);
+		// file_allow_write(current->fdt[i]);
 	}
 
 	current->next_fd = current->next_fd;
@@ -333,9 +334,21 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
+
+	/* 파일 디스크립터에 저장된 파일 닫기*/
+	// for(int i=2; i<64; i++){
+	// 	if(curr->fdt[i] == NULL)
+	// 		continue;
+	// 	if(curr->fdt[i]->deny_write == true)
+	// 		file_close(curr->fdt[i]);
+	// }
+
+	process_cleanup ();
 	sema_up(&curr->exit_sema);
 	sema_down(&curr->parent_wait_sema);
-	process_cleanup ();
+
+	/* 오픈 소스파일 닫기 */
+	// file_close(curr->source);
 }
 
 /* Free the current process's resources. */
@@ -462,6 +475,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	}
 	/* 스레드 소스파일 설정 */
 	t->source = file;
+	// file_deny_write(file);
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
