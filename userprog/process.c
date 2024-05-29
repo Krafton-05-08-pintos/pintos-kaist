@@ -89,6 +89,7 @@ initd (void *f_name) {
  * TID_ERROR if the thread cannot be created. */
 tid_t
 process_fork (const char *name, struct intr_frame *if_ UNUSED) {
+	
 	/* Clone current thread to new thread.*/
 	// struct thread *t = thread_current();
 	// memcpy(&t->parent_if, if_, sizeof(struct intr_frame));
@@ -154,8 +155,9 @@ static void
 __do_fork (void *aux) {
 	// printf("dofork start\n");
 	struct intr_frame if_;
-	struct thread *parent = (struct thread *) aux;
+	struct thread *parent = aux;
 	struct thread *current = thread_current ();
+
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 
 	struct intr_frame *parent_if = &parent->tf;
@@ -172,7 +174,7 @@ __do_fork (void *aux) {
 	// printf("parent->rsp : %d\n", parent_if->rsp);
 	
 	/* 1. Read the cpu context to local stack. */
-	memcpy (&if_, parent_if, sizeof (struct intr_frame));
+	memcpy (&(current->tf), parent_if, sizeof (struct intr_frame));
 
 	// printf("current pid : %d\n", current->tid);
 	if_.R.rax = 0;
@@ -220,7 +222,11 @@ __do_fork (void *aux) {
 	// printf("file duplicate succ\n");
 	// current->parent = parent;
 	process_init ();
+	current->source = file_duplicate(f_copy);
+	//printf("[do_fork]file pos %d\n",current->source->pos);
+	//process_init ();
 
+	//sema_up(&(current->parent->load_sema));
 	/* Finally, switch to the newly created process. */
 	// palloc_free_page(aux);
 
@@ -458,6 +464,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if (t->pml4 == NULL)
 		goto done;
 	process_activate (thread_current ());
+	
 
 	/* Open executable file. */
 	file = filesys_open (file_name);
@@ -536,7 +543,9 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;
-	
+
+	thread_current()->source = file;
+
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
 	
