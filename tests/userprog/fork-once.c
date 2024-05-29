@@ -10,7 +10,9 @@ test_main (void)
   int pid;
 
   if ((pid = fork("child"))){
+    // printf("wwww1\n");
     int status = wait (pid);
+    // printf("wwww2\n");
     msg ("Parent: child exit status is %d", status);
   } else {
     msg ("child run");

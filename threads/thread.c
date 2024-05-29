@@ -184,7 +184,6 @@ void thread_print_stats(void)
 tid_t thread_create(const char *name, int priority,
 					thread_func *function, void *aux)
 {
-
 	struct thread *parent = thread_current();
 	struct thread *t;
 	// printf("child thread : %p\n", t);
@@ -201,6 +200,7 @@ tid_t thread_create(const char *name, int priority,
 	/* Initialize thread. */
 	init_thread(t, name, priority);
 	tid = t->tid = allocate_tid();
+	// printf("\n[thread create] name %s, pid %d\n", name, tid);
 	// printf("\n\n\ntid in thread create : %d\n\n\n", tid);
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
@@ -214,7 +214,7 @@ tid_t thread_create(const char *name, int priority,
 	t->tf.eflags = FLAG_IF;
 
 	list_push_back(&parent->child_list, &t->child_elem);
-	parent->next_child = list_size(&parent->child_list);
+	// parent->next_child = list_size(&parent->child_list);
 
 	t->parent = parent;
   
@@ -589,7 +589,9 @@ init_thread(struct thread *t, const char *name, int priority)
   
 	/* 부모자식 상관관계*/
 	t->parent = NULL;
-	t->next_child = 0;
+	// t->next_child = 0;
+	
+	// t->exit_status = 0;
 
 	t->waiting_child = NULL;
 	sema_init(&t->exit_sema,0);
