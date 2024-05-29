@@ -91,18 +91,16 @@ tid_t
 process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 	
 	/* Clone current thread to new thread.*/
+	// struct thread *t = thread_current();
+	// memcpy(&t->parent_if, if_, sizeof(struct intr_frame));
 
-	//printf("[process_fork] if_ address: %p, rdi value: %ld\n", (void*)if_, if_->R.rdi);
-
-	struct thread *th_copy = palloc_get_page (0);
-	memcpy (th_copy,thread_current(), sizeof(struct thread));
+	// int size = sizeof(&thread_current()) / PGSIZE + 1;
+	struct thread *copy_t = palloc_get_multiple(PAL_ZERO, 3);
+	memcpy(copy_t, thread_current(), sizeof(struct thread)); 
+	memcpy(&copy_t->tf, if_, sizeof(struct intr_frame));
 	
-	
-	
-
 	return thread_create (name,
-			PRI_DEFAULT, __do_fork, th_copy);
-
+			PRI_DEFAULT, __do_fork, copy_t);
 }
 
 #ifndef VM
@@ -116,25 +114,33 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	void *newpage;
 	bool writable;
 
-	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
-	if(is_kern_pte(pte)) return true;
+	// 널값이 들어오는지 검출하기 위해 추가
+	ASSERT(pte != NULL);
 
+	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
+	if(is_kernel_vaddr(va) || is_kern_pte(pte)){
+		return true;
+	} 
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page (parent->pml4, va);
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
-	newpage = pml4_create();
+	newpage = palloc_get_page(PAL_USER | PAL_ZERO);
 	
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
+	
 	writable = is_writable(pte);
+
 	memcpy (newpage, parent_page, PGSIZE);
 	/* 5. Add new page to child's page table at address VA with WRITABLE
 	 *    permission. */
+	
 	if (!pml4_set_page (current->pml4, va, newpage, writable)) {
 		/* 6. TODO: if fail to insert page, do error handling. */
+		printf("erorrrr\n");
 		return false;
 	}
 	return true;
@@ -147,54 +153,94 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
  *       this function. */
 static void
 __do_fork (void *aux) {
+	// printf("dofork start\n");
 	struct intr_frame if_;
 	struct thread *parent = aux;
 	struct thread *current = thread_current ();
 
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
-	struct intr_frame *parent_if = &(parent->tf);
+
+	struct intr_frame *parent_if = &parent->tf;
+	// struct intr_frame *parent_if = &parent->tf;
 	bool succ = true;
 
+	// printf("\ndo_fork ---\n");
+	// printf("parent->rdi : %d\n", parent_if->R.rdi);
+	// printf("parent->rsi : %s\n", parent_if->R.rsi);
+	// printf("parent->rdx : %d\n", parent_if->R.rdx);
+	// printf("parent->r10 : %d\n", parent_if->R.r10);
+	// printf("parent->r8 : %d\n", parent_if->R.r8);
+	// printf("parent->r9 : %d\n", parent_if->R.r9);
+	// printf("parent->rsp : %d\n", parent_if->rsp);
+	
 	/* 1. Read the cpu context to local stack. */
 	memcpy (&(current->tf), parent_if, sizeof (struct intr_frame));
 
+	// printf("current pid : %d\n", current->tid);
+	if_.R.rax = 0;
+
 	/* 2. Duplicate PT */
 	current->pml4 = pml4_create();
-	if (current->pml4 == NULL)
+	if (current->pml4 == NULL){
+		printf("error1\n");
 		goto error;
-
+	}
 	process_activate (current);
 #ifdef VM
 	supplemental_page_table_init (&current->spt);
 	if (!supplemental_page_table_copy (&current->spt, &parent->spt))
 		goto error;
 #else
-	if (!pml4_for_each (parent->pml4, duplicate_pte, parent))
+	if (!pml4_for_each (parent->pml4, duplicate_pte, parent)){
+		printf("error2\n");
 		goto error;
-	else printf("pml4 for each true!\n");
+	}
 #endif
-
+	// printf("duplicagte end\n");
+	// printf("parent pid : %d\n", parent->tid);
 	/* TODO: Your code goes here.
 	 * TODO: Hint) To duplicate the file object, use `file_duplicate`
 	 * TODO:       in include/filesys/file.h. Note that parent should not return
 	 * TODO:       from the fork() until this function successfully duplicates
 	 * TODO:       the resources of parent.*/
 	
-	struct file *f_copy = palloc_get_page (0);
-	memcpy (f_copy,parent->source, sizeof(struct file));
+	// struct file* f_copy = palloc_get_page(PAL_ZERO);
+	// memcpy(current->fdt[0], parent->fdt[0], sizeof(struct file*) * 64);
+	
+	for(int i=2; i<64; i++){
+		if(current->parent == NULL)
+			break;
+		if(current->parent->fdt[i] == NULL)
+			continue;
+		current->fdt[i] = file_duplicate(current->parent->fdt[i]);
+	}
 
+	current->next_fd = current->next_fd;
+	current->source = file_duplicate(parent->source);
+	// file_deny_write(current->source);
+	
+	// printf("file duplicate succ\n");
+	// current->parent = parent;
+	process_init ();
 	current->source = file_duplicate(f_copy);
 	//printf("[do_fork]file pos %d\n",current->source->pos);
 	//process_init ();
 
 	//sema_up(&(current->parent->load_sema));
 	/* Finally, switch to the newly created process. */
+	// palloc_free_page(aux);
+
+	if(current->parent != NULL && current->parent->waiting_child == current){
+		sema_up(&current->parent->load_sema);
+	}
 	if (succ)
-		//printf("is success??? %d\n",succ);
-		do_iret (&current->tf);
+		do_iret(&if_);
 error:
-	printf("error!\n");
-	//sema_up(&(parent->load_sema));
+	if(current->parent != NULL && current->parent->waiting_child == current){
+		printf("실패 sema up 전 current pid : %d\n", current->tid);
+		printf("실패 sema up 전 parent pid : %d\n", current->parent->tid);
+		sema_up(&current->parent->load_sema);
+	}
 	thread_exit ();
 }
 
@@ -275,12 +321,17 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       implementing the process_wait. */
 	// while (child_tid);
 	struct thread *t = thread_current();
-
-	if(get_child_process(&t->child_list, child_tid)->parent == t)
+ 	struct thread *child = get_child_process(&t->child_list, child_tid);
+	sema_up(&child->parent_wait_sema);
+	// printf("웨이트 child_tid : %d\n", child_tid);
+	if(child->parent == t)
 	{
-		t->waiting_child = get_child_process(&t->child_list,child_tid);
+		t->waiting_child = child;
+		// printf("프로세스 종료를 기다림 parent-%d wait child - %d\n",t->tid, child->tid);
 		sema_down(&t->exit_sema);
-		return 0;
+		list_remove(&child->child_elem);
+		// printf("부모 %d의 자식 %d가 종료됨 exit_status : %d\n",t->tid,child_tid, t->exit_status);
+		return t->exit_status;
 	}
 	
 	return -1;
@@ -289,6 +340,7 @@ process_wait (tid_t child_tid UNUSED) {
 /* Exit the process. This function is called by thread_exit (). */
 void
 process_exit (void) {
+	enum intr_level old_level;
 	struct thread *curr = thread_current ();
 	//printf("thread_name : %s\n",curr->name);
 	//printf("thread_parent_addr : %p\n",curr->parent);
@@ -296,8 +348,12 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	if(curr->parent->waiting_child == curr)
+	sema_down(&curr->parent_wait_sema);
+	old_level = intr_disable ();
+	if(curr->parent->waiting_child == curr){
 		sema_up(&curr->parent->exit_sema);
+	}
+	intr_set_level (old_level);
 	process_cleanup ();
 }
 
@@ -424,6 +480,8 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
+	/* 스레드 소스파일 설정 */
+	t->source = file;
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr

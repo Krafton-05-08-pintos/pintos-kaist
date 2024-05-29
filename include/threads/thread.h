@@ -131,17 +131,22 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 	struct file* fdt[64];               /* file descriptor table 추가 */
 	int next_fd;                        /* 가용한 다음 fd */
+	struct intr_frame parent_if;
 
 	struct file* source;				/* 프로세스 실행에 사용한 실행파일 */
 	struct thread *parent;
   
 	struct list child_list;
 	struct list_elem child_elem;
-	int next_child;
+	// int next_child;
+	
 
 	struct thread *waiting_child;
 	struct semaphore exit_sema;
 	struct semaphore load_sema;
+	struct semaphore parent_wait_sema;
+
+	int exit_status;
 };
 
 /* If false (default), use round-robin scheduler.

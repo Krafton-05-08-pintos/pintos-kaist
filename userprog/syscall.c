@@ -83,14 +83,10 @@ void sys_halt(){
 void sys_exit(int status) {
 	struct thread *cur_t = thread_current();
 	struct thread *parent_t = cur_t->parent;
-
-	//sema_up(&(parent_t->load_sema));
-
-	list_remove(&cur_t->child_elem);
-
-	//parent_t->next_child = list_size(&parent_t->child_list);
+	// parent_t->next_child = list_size(&parent_t->child_list);
 	printf("%s: exit(%d)\n", cur_t->name, status);
-
+	// printf("parent_t tid : %d\n", parent_t->tid);
+	parent_t->exit_status = status;
 	thread_exit();
 	return;
 }
@@ -111,26 +107,34 @@ int sys_exec (const char *cmd_line){
 }
 
 
+// pid_t
+// sys_fork (const char *thread_name) {
+// 	if (!validation(thread_name))
+//     {
+//         sys_exit(-1);
+// 	}
+// 	struct thread *cur_t = thread_current();
+// 	tid_t child = process_fork(thread_name, &(cur_t->tf));
+
+// 	return child;
+// }
+
 pid_t
-sys_fork (const char *thread_name) {
-	if (!validation(thread_name))
+sys_fork (struct intr_frame *f) {
+
+	if (!validation(f->R.rax))
     {
         sys_exit(-1);
 	}
-	struct thread *cur_t = thread_current();
+	tid_t child = process_fork(f->R.rdi, f);
+
+	struct thread* t = thread_current();
+	ASSERT(t->name != "idle");
 	
-	tid_t child;
-	child = process_fork(thread_name, &(cur_t->tf));
-
-	//printf("sys_fork[%s]: return %d \n",cur_t->name,child);
-	//printf("current_tid: %s\n",cur_t->name);
-	
-
-	//sema_down(&(cur_t->load_sema));
-
-	printf("after sema_down return %d \n",child);
-	
-
+	t->waiting_child = get_child_process(&t->child_list, child);
+	// printf("포크 완료를 기다림 parent-%d wait child - %d\n",t->tid, t->waiting_child->tid);
+	sema_down(&t->load_sema);
+	// printf("sema up 됨 ~~~ child : %d\n", child);
 	return child;
 }
 
@@ -273,7 +277,7 @@ sys_seek (int fd, unsigned position) {
 unsigned
 sys_tell (int fd) {
 
-	file_tell(return_file(fd));
+	return file_tell(return_file(fd));
 }
 
 void
@@ -289,7 +293,6 @@ sys_close (int fd) {
 
 int
 sys_wait(pid_t pid) {
-	printf("current_thread_wait: %s\n",thread_current()->name);
 	return process_wait(pid);
 }
 
@@ -297,9 +300,11 @@ sys_wait(pid_t pid) {
 void
 syscall_handler (struct intr_frame *f UNUSED) {
 	// TODO: Your implementation goes here.
-
+	if(thread_current()->name == "idle")
+		return;
 	uint64_t number = f->R.rax;
 	
+	// printf("\npid : %d \n", thread_current()->tid);
 	// printf("system call number : %d\n", number);
 	// printf("f->rdi : %d\n", f->R.rdi);
 	// printf("f->rsi : %s\n", f->R.rsi);
@@ -307,7 +312,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 	// printf("f->r10 : %d\n", f->R.r10);
 	// printf("f->r8 : %d\n", f->R.r8);
 	// printf("f->r9 : %d\n", f->R.r9);
-	// printf("SYS_HALT : %d\n", SYS_HALT);
+	// printf("f->rsp : %d\n", f->rsp);
 
 	switch(number){
 		case SYS_HALT:
@@ -322,13 +327,8 @@ syscall_handler (struct intr_frame *f UNUSED) {
 
 		case SYS_FORK:
 			// set_kernel_stack(f);
-			memcpy(&(thread_current()->tf),f,sizeof(thread_current()->tf));
-			// printf("[syscall_handler] thread_current: %s\n", (f->R.rdi));
-			// printf("[syscall_handler] thread_current: %s\n", (thread_current()->tf.R.rdi));
-			//printf("%d sys_fork \n",f->R.rax);
-			f->R.rax = 0;
-			f->R.rax= sys_fork(f->R.rdi);
-			
+			// f->R.rax = sys_fork(f->R.rdi);
+			f->R.rax = sys_fork(f);
 			return;
 
 		case SYS_EXEC:
