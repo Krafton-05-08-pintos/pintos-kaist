@@ -89,7 +89,6 @@ initd (void *f_name) {
  * TID_ERROR if the thread cannot be created. */
 tid_t
 process_fork (const char *name, struct intr_frame *if_ UNUSED) {
-	
 	/* Clone current thread to new thread.*/
 	// struct thread *t = thread_current();
 	// memcpy(&t->parent_if, if_, sizeof(struct intr_frame));
@@ -155,9 +154,8 @@ static void
 __do_fork (void *aux) {
 	// printf("dofork start\n");
 	struct intr_frame if_;
-	struct thread *parent = aux;
+	struct thread *parent = (struct thread *) aux;
 	struct thread *current = thread_current ();
-
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 
 	struct intr_frame *parent_if = &parent->tf;
@@ -174,7 +172,7 @@ __do_fork (void *aux) {
 	// printf("parent->rsp : %d\n", parent_if->rsp);
 	
 	/* 1. Read the cpu context to local stack. */
-	memcpy (&(current->tf), parent_if, sizeof (struct intr_frame));
+	memcpy (&if_, parent_if, sizeof (struct intr_frame));
 
 	// printf("current pid : %d\n", current->tid);
 	if_.R.rax = 0;
@@ -222,11 +220,7 @@ __do_fork (void *aux) {
 	// printf("file duplicate succ\n");
 	// current->parent = parent;
 	process_init ();
-	current->source = file_duplicate(f_copy);
-	//printf("[do_fork]file pos %d\n",current->source->pos);
-	//process_init ();
 
-	//sema_up(&(current->parent->load_sema));
 	/* Finally, switch to the newly created process. */
 	// palloc_free_page(aux);
 
@@ -323,15 +317,10 @@ process_wait (tid_t child_tid UNUSED) {
 	struct thread *t = thread_current();
  	struct thread *child = get_child_process(&t->child_list, child_tid);
 	if(child == NULL) return -1;
-	t->waiting_child = child;
-
 	sema_down(&child->exit_sema);
-	// printf("웨이트 child_tid : %d\n", child_tid);
-		list_remove(&child->child_elem);
-		// printf("프로세스 종료를 기다림 parent-%d wait child - %d\n",t->tid, child->tid);
-		sema_up(&child->parent_wait_sema);
-		// printf("부모 %d의 자식 %d가 종료됨 exit_status : %d\n",t->tid,child_tid, t->exit_status);
-		return t->exit_status;
+	sema_up(&child->parent_wait_sema);
+	list_remove(&child->child_elem);
+	return t->exit_status;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
@@ -344,9 +333,9 @@ process_exit (void) {
 	 * TODO: Implement process termination message (see
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
-	process_cleanup ();
 	sema_up(&curr->exit_sema);
 	sema_down(&curr->parent_wait_sema);
+	process_cleanup ();
 }
 
 /* Free the current process's resources. */
@@ -464,7 +453,6 @@ load (const char *file_name, struct intr_frame *if_) {
 	if (t->pml4 == NULL)
 		goto done;
 	process_activate (thread_current ());
-	
 
 	/* Open executable file. */
 	file = filesys_open (file_name);
@@ -543,9 +531,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;
-
-	thread_current()->source = file;
-
+	
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
 	
