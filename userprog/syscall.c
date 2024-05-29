@@ -93,6 +93,10 @@ void sys_exit(int status) {
 
 
 int sys_exec (const char *cmd_line){
+	if(!validation(cmd_line)){
+		//printf("is not valid\n");
+		sys_exit(0);
+	}
 	char *fn_copy = palloc_get_page(PAL_ZERO);
 	int size = strlen(cmd_line) + 1;
 	strlcpy(fn_copy, cmd_line, size);
@@ -328,10 +332,7 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			return;
 
 		case SYS_EXEC:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit(0);
-			}
+			
 			sys_exec(f->R.rdi);
 			return;
 
@@ -393,6 +394,5 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			break;
 	}
 
-	// printf ("system call!\n");
 	thread_exit ();
 }
