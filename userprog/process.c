@@ -93,8 +93,8 @@ process_fork (const char *name, struct intr_frame *if_ UNUSED) {
 	// struct thread *t = thread_current();
 	// memcpy(&t->parent_if, if_, sizeof(struct intr_frame));
 
-	// int size = sizeof(&thread_current()) / PGSIZE + 1;
-	struct thread *copy_t = palloc_get_multiple(PAL_ZERO, 3);
+	int size = sizeof(*thread_current()) / PGSIZE + 1;
+	struct thread *copy_t = palloc_get_multiple(PAL_ZERO, size);
 	memcpy(copy_t, thread_current(), sizeof(struct thread)); 
 	memcpy(&copy_t->tf, if_, sizeof(struct intr_frame));
 	
@@ -140,6 +140,7 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 	if (!pml4_set_page (current->pml4, va, newpage, writable)) {
 		/* 6. TODO: if fail to insert page, do error handling. */
 		printf("erorrrr\n");
+		palloc_free_page(newpage);
 		return false;
 	}
 	return true;
@@ -214,9 +215,9 @@ __do_fork (void *aux) {
 		// file_allow_write(current->fdt[i]);
 	}
 
-	current->next_fd = current->next_fd;
+	current->next_fd = current->parent->next_fd;
 	current->source = file_duplicate(parent->source);
-	// file_deny_write(current->source);
+	file_deny_write(current->source);
 	
 	// printf("file duplicate succ\n");
 	// current->parent = parent;
@@ -309,6 +310,7 @@ process_exec (void *f_name) {
  *
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
+
 int
 process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
@@ -336,19 +338,21 @@ process_exit (void) {
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
 	/* 파일 디스크립터에 저장된 파일 닫기*/
-	// for(int i=2; i<64; i++){
-	// 	if(curr->fdt[i] == NULL)
-	// 		continue;
-	// 	if(curr->fdt[i]->deny_write == true)
-	// 		file_close(curr->fdt[i]);
-	// }
-
+	
 	process_cleanup ();
 	sema_up(&curr->exit_sema);
 	sema_down(&curr->parent_wait_sema);
 
 	/* 오픈 소스파일 닫기 */
-	// file_close(curr->source);
+	file_close(curr->source);
+
+	for(int i=2; i<64; i++){
+		if(curr->fdt[i] == NULL)
+			continue;
+		if(curr->fdt[i]->deny_write == true)
+			file_close(curr->fdt[i]);
+	}
+
 }
 
 /* Free the current process's resources. */
@@ -475,7 +479,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	}
 	/* 스레드 소스파일 설정 */
 	t->source = file;
-	// file_deny_write(file);
+	file_deny_write(file);
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -556,7 +560,7 @@ load (const char *file_name, struct intr_frame *if_) {
 
 done:
 	/* We arrive here whether the load is successful or not. */
-	file_close (file);
+	// file_close (file);
 	return success;
 }
 

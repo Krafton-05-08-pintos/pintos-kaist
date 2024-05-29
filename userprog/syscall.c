@@ -34,11 +34,14 @@ void syscall_handler (struct intr_frame *);
 #define MSR_LSTAR 0xc0000082        /* Long mode SYSCALL target */
 #define MSR_SYSCALL_MASK 0xc0000084 /* Mask for the eflags */
 
+static struct lock file_lock;
 void
 syscall_init (void) {
 	write_msr(MSR_STAR, ((uint64_t)SEL_UCSEG - 0x10) << 48  |
 			((uint64_t)SEL_KCSEG) << 32);
 	write_msr(MSR_LSTAR, (uint64_t) syscall_entry);
+
+	lock_init(&file_lock);
 
 	/* The interrupt service rountine should not serve any interrupts
 	 * until the syscall_entry swaps the userland stack to the kernel
@@ -67,7 +70,7 @@ bool validation(uint64_t *ptr){
 }
 
 // void set_kernel_stack(struct intr_frame *f){
-	
+
 // }
 
 struct file* return_file(int fd) {
@@ -93,6 +96,12 @@ void sys_exit(int status) {
 
 
 int sys_exec (const char *cmd_line){
+	
+	if (!validation(cmd_line))
+    {
+        sys_exit(-1);
+	}
+
 	char *fn_copy = palloc_get_page(PAL_ZERO);
 	int size = strlen(cmd_line) + 1;
 	strlcpy(fn_copy, cmd_line, size);
@@ -128,9 +137,9 @@ sys_fork (struct intr_frame *f) {
 	ASSERT(t->name != "idle");
 	
 	t->waiting_child = get_child_process(&t->child_list, child);
-	// printf("포크 완료를 기다림 parent-%d wait child - %d\n",t->tid, t->waiting_child->tid);
+	//printf("포크 완료를 기다림 parent-%d wait child - %d\n",t->tid, t->waiting_child->tid);
 	sema_down(&t->load_sema);
-	// printf("sema up 됨 ~~~ child : %d\n", child);
+	//printf("sema up 됨 ~~~ child : %d\n", child);
 	return child;
 }
 
@@ -154,8 +163,9 @@ sys_remove (const char *file) {
        // printf("is not valid\n");
         sys_exit(-1);
     }
-
+	lock_acquire(&file_lock);
 	return filesys_remove(file);
+	lock_release(&file_lock);
 }
 
 int
@@ -183,16 +193,20 @@ sys_open (const char *file) {
     }
 
 	struct thread* t = thread_current();
+
+	lock_acquire(&file_lock);
 	struct file *open_file = filesys_open(file);
+	lock_release(&file_lock);
 
 	/* 찾는데 실패하면 NULL 반환받음 -> return -1 */
 	if (open_file == NULL) return -1;
 
-	/* 성공하면 deny_write */
-	// file_deny_write(open_file);
-	// printf("file : %p\n", open_file);
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = open_file;
+
+	// t->source = open_file;
+	// file_deny_write(t->source);
+
 	if(find_next_fd(t) == -1) {
 		printf("파일 디스크립터 다 참^^");
 		//thread_exit(0);
@@ -255,10 +269,9 @@ sys_write (int fd, const void *buffer, unsigned size) {
 	}
 	else{
 		struct file *write_file = return_file(fd);
-		// printf("file : %p\n", write_file);
+
 		sema_down(&(write_file->completion_wait));
 		byte_size = file_write(write_file, buffer,size);
-		// printf("ddddddddd%d, size : %d\n", byte_size, size);
 		sema_up(&(write_file->completion_wait));
 	}
 	return byte_size;
@@ -286,7 +299,7 @@ sys_close (int fd) {
 	file_close(close_file);	
 	struct thread *t = thread_current();
 	t->fdt[fd] = NULL;
-	// file_close(return_file(fd));
+	file_close(return_file(fd));
 	if(fd < t->next_fd)
 		t->next_fd = fd;
 }
