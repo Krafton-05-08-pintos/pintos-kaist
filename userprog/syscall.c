@@ -188,6 +188,9 @@ sys_open (const char *file) {
 	/* 찾는데 실패하면 NULL 반환받음 -> return -1 */
 	if (open_file == NULL) return -1;
 
+	/* 성공하면 deny_write */
+	// file_deny_write(open_file);
+	// printf("file : %p\n", open_file);
 	int cur_fd = t->next_fd;
 	t->fdt[cur_fd] = open_file;
 	if(find_next_fd(t) == -1) {
@@ -252,9 +255,10 @@ sys_write (int fd, const void *buffer, unsigned size) {
 	}
 	else{
 		struct file *write_file = return_file(fd);
-
+		// printf("file : %p\n", write_file);
 		sema_down(&(write_file->completion_wait));
 		byte_size = file_write(write_file, buffer,size);
+		// printf("ddddddddd%d, size : %d\n", byte_size, size);
 		sema_up(&(write_file->completion_wait));
 	}
 	return byte_size;
@@ -282,7 +286,7 @@ sys_close (int fd) {
 	file_close(close_file);	
 	struct thread *t = thread_current();
 	t->fdt[fd] = NULL;
-	file_close(return_file(fd));
+	// file_close(return_file(fd));
 	if(fd < t->next_fd)
 		t->next_fd = fd;
 }
