@@ -51,6 +51,7 @@ struct thread *get_child_process(struct list* list, tid_t child){
  * before process_create_initd() returns. Returns the initd's
  * thread id, or TID_ERROR if the thread cannot be created.
  * Notice that THIS SHOULD BE CALLED ONCE. */
+
 tid_t
 process_create_initd (const char *file_name) {
 	char *fn_copy;
@@ -319,10 +320,20 @@ process_wait (tid_t child_tid UNUSED) {
 	// while (child_tid);
 	struct thread *t = thread_current();
  	struct thread *child = get_child_process(&t->child_list, child_tid);
+
+	// printf("[process_wait] wait_thread: %s\n",t->name);
+	// printf("[process_wait] child_thread: %s\n",child->name);
+
 	if(child == NULL) return -1;
-	sema_down(&child->exit_sema);
-	sema_up(&child->parent_wait_sema);
-	list_remove(&child->child_elem);
+
+	if(child->parent == t) {
+
+		sema_up(&child->parent_wait_sema);
+		sema_down(&child->exit_sema);
+
+		list_remove(&child->child_elem);
+	}
+
 	return t->exit_status;
 }
 
@@ -337,21 +348,28 @@ process_exit (void) {
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
-	/* 파일 디스크립터에 저장된 파일 닫기*/
+	/* 파일 디스크립터에 저장된 파일 닫기 */
+	
+	//if(curr->parent->tid==1 || curr->parent->waiting_child == curr ) {
+		// printf("종료 되기 전 깨우러옴\n");
+		sema_down(&curr->parent_wait_sema);
+		sema_up(&curr->exit_sema);
+	//}
 	
 	process_cleanup ();
-	sema_up(&curr->exit_sema);
-	sema_down(&curr->parent_wait_sema);
+
+	for(int i=2; i<64; i++) {
+		if(curr->fdt[i] == NULL)
+			continue;
+		if(curr->fdt[i] == curr->source) continue;
+
+		if(curr->fdt[i]->deny_write == true)
+			file_close(curr->fdt[i]);
+	}
 
 	/* 오픈 소스파일 닫기 */
 	file_close(curr->source);
 
-	for(int i=2; i<64; i++){
-		if(curr->fdt[i] == NULL)
-			continue;
-		if(curr->fdt[i]->deny_write == true)
-			file_close(curr->fdt[i]);
-	}
 
 }
 
@@ -477,9 +495,9 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
-	/* 스레드 소스파일 설정 */
-	t->source = file;
-	file_deny_write(file);
+	// /* 스레드 소스파일 설정 */
+	// t->source = file;
+	// file_deny_write(file);
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -552,6 +570,10 @@ load (const char *file_name, struct intr_frame *if_) {
 	
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
+
+	/* 스레드 소스파일 설정 */
+	t->source = file;
+	file_deny_write(file);
 	
 	/* TODO: Your code goes here.
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
@@ -560,7 +582,7 @@ load (const char *file_name, struct intr_frame *if_) {
 
 done:
 	/* We arrive here whether the load is successful or not. */
-	// file_close (file);
+	if(t->source != file) file_close (file);
 	return success;
 }
 

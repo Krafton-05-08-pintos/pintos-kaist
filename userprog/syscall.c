@@ -184,6 +184,7 @@ find_next_fd(struct thread *t) {
 	return -1;
 }
 
+
 int
 sys_open (const char *file) {
 	if (!validation(file))
@@ -289,7 +290,6 @@ sys_seek (int fd, unsigned position) {
 
 unsigned
 sys_tell (int fd) {
-
 	return file_tell(return_file(fd));
 }
 
@@ -306,6 +306,9 @@ sys_close (int fd) {
 
 int
 sys_wait(pid_t pid) {
+
+	//thread_current()->waiting_child = get_child_process(&thread_current()->child_list,pid);
+
 	return process_wait(pid);
 }
 
@@ -345,10 +348,6 @@ syscall_handler (struct intr_frame *f UNUSED) {
 			return;
 
 		case SYS_EXEC:
-			if(!validation(f->R.rdi)){
-				printf("is not valid\n");
-				sys_exit(0);
-			}
 			sys_exec(f->R.rdi);
 			return;
 
